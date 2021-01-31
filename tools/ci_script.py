@@ -31,8 +31,14 @@ HOST_IOTJS_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 # IoT.js path in docker
 DOCKER_IOTJS_PATH = fs.join(DOCKER_ROOT_PATH, 'work_space/iotjs')
 
+# Node server script path in host
+HOST_NODE_SERVER_JS_PATH = os.path.join(HOST_IOTJS_PATH, 'test/test-server/server.js')
+
 # Node server path in docker
 DOCKER_NODE_SERVER_PATH = fs.join(DOCKER_ROOT_PATH, 'work_space/node_server')
+
+# Node server script path in docker
+DOCKER_NODE_SERVER_JS_PATH = fs.join(DOCKER_NODE_SERVER_PATH, 'server.js')
 
 DOCKER_TIZENRT_PATH = fs.join(DOCKER_ROOT_PATH, 'TizenRT')
 DOCKER_TIZENRT_OS_PATH = fs.join(DOCKER_TIZENRT_PATH, 'os')
@@ -75,6 +81,7 @@ def run_docker():
     ex.check_run_cmd('docker', ['run', '-di', '--privileged',
                      '--name', DOCKER_NAME,
                      '-v', '%s:%s' % (HOST_IOTJS_PATH, DOCKER_IOTJS_PATH),
+                     '-v', '%s:%s' % (HOST_NODE_SERVER_JS_PATH, DOCKER_NODE_SERVER_JS_PATH),
                      '--add-host', 'test.mosquitto.org:127.0.0.1',
                      '--add-host', 'echo.websocket.org:127.0.0.1',
                      '--add-host', 'httpbin.org:127.0.0.1',
