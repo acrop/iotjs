@@ -17,4 +17,5 @@ set(CMAKE_SYSTEM_PROCESSOR mips)
 
 set(CMAKE_C_COMPILER mips-openwrt-linux-gcc)
 set(CMAKE_C_COMPILER_WORKS TRUE)
-
+set(CMAKE_CXX_COMPILER mips-openwrt-linux-g++)
+set(CMAKE_CXX_COMPILER_WORKS TRUE)

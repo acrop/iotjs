@@ -15,7 +15,7 @@
 cmake_minimum_required(VERSION 3.5)
 include(CheckCCompilerFlag)
 
-project(IOTJS C)
+project(IOTJS LANGUAGES C CXX)
 
 set(IOTJS_VERSION_MAJOR 1)
 set(IOTJS_VERSION_MINOR 0)
@@ -73,6 +73,7 @@ endmacro()
 
 macro(iotjs_add_compile_flags)
   iotjs_add_flags(CMAKE_C_FLAGS ${ARGV})
+  iotjs_add_flags(CMAKE_CXX_FLAGS ${ARGV})
 endmacro()
 
 macro(iotjs_add_link_flags)

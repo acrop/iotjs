@@ -28,3 +28,7 @@ endif()
 if("${CMAKE_C_COMPILER}" STREQUAL "")
   set(CMAKE_C_COMPILER arm-linux-gnueabi-gcc)
 endif()
+
+if("${CMAKE_CXX_COMPILER}" STREQUAL "")
+  set(CMAKE_CXX_COMPILER arm-linux-gnueabi-g++)
+endif()
