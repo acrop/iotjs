@@ -49,7 +49,7 @@ DOCKER_NUTTX_TOOLS_PATH = fs.join(DOCKER_NUTTX_PATH, 'tools')
 DOCKER_NUTTX_APPS_PATH = fs.join(DOCKER_ROOT_PATH, 'apps')
 
 DOCKER_NAME = 'iotjs_docker'
-DOCKER_TAG = 'iotjs/ubuntu:0.10'
+DOCKER_TAG = 'lygstate/iotjs:latest'
 BUILDTYPES = ['debug', 'release']
 TIZENRT_TAG = '2.0_Public_M2'
 
