@@ -16,20 +16,23 @@
 #include "iotjs.h"
 #include "jerryscript-ext/handle-scope.h"
 #include "internal/node_api_internal.h"
+#include "node_api_static.h"
 
 static napi_module* mod_pending;
 
 void napi_module_register(napi_module* mod) {
-  mod_pending = mod;
+  if (mod->nm_flags == 0) {
+    mod_pending = mod;
+  }
 }
 
-int napi_module_init_pending(jerry_value_t* exports) {
-  if (mod_pending == NULL) {
-    return napi_module_no_pending;
+static int napi_module_init(jerry_value_t* exports, napi_module* mod) {
+  if (mod == NULL) {
+    return napi_invalid_arg;
   }
 
   napi_addon_register_func init =
-      (napi_addon_register_func)mod_pending->nm_register_func;
+      (napi_addon_register_func)mod->nm_register_func;
 
   if (init == NULL) {
     return napi_module_no_nm_register_func;
@@ -57,8 +60,6 @@ int napi_module_init_pending(jerry_value_t* exports) {
 
   jerryx_close_handle_scope(scope);
 
-  mod_pending = NULL;
-
   if (iotjs_napi_is_exception_pending(env)) {
     jerry_value_t jval_err;
     jval_err = iotjs_napi_env_get_and_clear_exception(env);
@@ -70,4 +71,26 @@ int napi_module_init_pending(jerry_value_t* exports) {
     return napi_pending_exception;
   }
   return napi_module_load_ok;
+}
+
+int napi_module_init_pending(jerry_value_t* exports) {
+  int result = napi_module_load_ok;
+  if (mod_pending == NULL) {
+    return napi_module_no_pending;
+  }
+  result = napi_module_init(exports, mod_pending);
+  mod_pending = NULL;
+  return result;
+}
+
+jerry_value_t napi_module_init_static(napi_module* mod) {
+  jerry_value_t exports = jerry_create_undefined();
+  int status = napi_module_init(&exports, mod);
+  if (status == napi_module_no_nm_register_func) {
+    jerry_value_t jval_error = jerry_create_error(
+        JERRY_ERROR_COMMON,
+        (jerry_char_t*)"Module has no declared entry point.");
+    return jval_error;
+  }
+  return exports;
 }

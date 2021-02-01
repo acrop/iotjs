@@ -255,6 +255,14 @@
                        "napi/node_api_value.c"],
       "init": "iotjs_init_dynamicloader"
     },
+    "napi__raise_on_init": {
+      "require": ["napi"],
+      "native_files": [
+        "modules/iotjs_module_napi__raise_on_init.c"
+      ],
+      "init": "iotjs_napi__raise_on_init_napi_init",
+      "js_file": "js/napi__raise_on_init.js"
+    },
     "net": {
       "js_file": "js/net.js",
       "require": ["assert", "events", "stream", "tcp", "util"]

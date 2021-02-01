@@ -307,7 +307,8 @@ napi_status napi_define_properties(napi_env env, napi_value object,
       jerryx_create_handle(jval_prop_name);
     } else if (prop.name != NULL) {
       jval_prop_name = AS_JERRY_VALUE(prop.name);
-      NAPI_TRY_TYPE(string, jval_prop_name);
+      /* jval_prop_name can be symbol or string */
+      /* it's properly checked in jerry_define_own_property */
     } else {
       NAPI_RETURN(napi_invalid_arg);
     }
