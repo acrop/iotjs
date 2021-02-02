@@ -26,6 +26,17 @@
 #define GET_4TH_ARG(arg1, arg2, arg3, arg4, ...) arg4
 
 #define AS_JERRY_VALUE(nvalue) (jerry_value_t)(uintptr_t) nvalue
+
+static inline jerry_value_t AS_JERRY_OBJECT(napi_value nvalue) {
+  jerry_value_t val = AS_JERRY_VALUE(nvalue);
+  if (jerry_value_is_error(val)) {
+    val = jerry_get_value_from_error(val, false);
+    jerry_release_value(val);
+    return val;
+  }
+  return val;
+}
+
 #define AS_NAPI_VALUE(jval) (napi_value)(uintptr_t) jval
 
 /**

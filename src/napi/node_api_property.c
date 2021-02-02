@@ -23,7 +23,7 @@
 napi_status napi_get_property_names(napi_env env, napi_value object,
                                     napi_value* result) {
   NAPI_TRY_ENV(env);
-  jerry_value_t jval = AS_JERRY_VALUE(object);
+  jerry_value_t jval = AS_JERRY_OBJECT(object);
   NAPI_TRY_TYPE(object, jval);
 
   jerry_value_t jval_keys = jerry_get_object_keys(jval);
@@ -39,7 +39,7 @@ napi_status napi_get_property_names(napi_env env, napi_value object,
 napi_status napi_set_property(napi_env env, napi_value object, napi_value key,
                               napi_value value) {
   NAPI_TRY_ENV(env);
-  jerry_value_t jval_object = AS_JERRY_VALUE(object);
+  jerry_value_t jval_object = AS_JERRY_OBJECT(object);
   jerry_value_t jval_key = AS_JERRY_VALUE(key);
   jerry_value_t jval_val = AS_JERRY_VALUE(value);
 
@@ -59,7 +59,7 @@ napi_status napi_set_property(napi_env env, napi_value object, napi_value key,
 napi_status napi_get_property(napi_env env, napi_value object, napi_value key,
                               napi_value* result) {
   NAPI_TRY_ENV(env);
-  jerry_value_t jval_object = AS_JERRY_VALUE(object);
+  jerry_value_t jval_object = AS_JERRY_OBJECT(object);
   jerry_value_t jval_key = AS_JERRY_VALUE(key);
 
   NAPI_TRY_TYPE(object, jval_object);
@@ -78,7 +78,7 @@ napi_status napi_get_property(napi_env env, napi_value object, napi_value key,
 napi_status napi_has_property(napi_env env, napi_value object, napi_value key,
                               bool* result) {
   NAPI_TRY_ENV(env);
-  jerry_value_t jval_object = AS_JERRY_VALUE(object);
+  jerry_value_t jval_object = AS_JERRY_OBJECT(object);
   jerry_value_t jval_key = AS_JERRY_VALUE(key);
 
   NAPI_TRY_TYPE(object, jval_object);
@@ -92,7 +92,7 @@ napi_status napi_has_property(napi_env env, napi_value object, napi_value key,
 napi_status napi_delete_property(napi_env env, napi_value object,
                                  napi_value key, bool* result) {
   NAPI_TRY_ENV(env);
-  jerry_value_t jval_object = AS_JERRY_VALUE(object);
+  jerry_value_t jval_object = AS_JERRY_OBJECT(object);
   jerry_value_t jval_key = AS_JERRY_VALUE(key);
 
   NAPI_TRY_TYPE(object, jval_object);
@@ -104,7 +104,7 @@ napi_status napi_delete_property(napi_env env, napi_value object,
 napi_status napi_has_own_property(napi_env env, napi_value object,
                                   napi_value key, bool* result) {
   NAPI_TRY_ENV(env);
-  jerry_value_t jval_object = AS_JERRY_VALUE(object);
+  jerry_value_t jval_object = AS_JERRY_OBJECT(object);
   jerry_value_t jval_key = AS_JERRY_VALUE(key);
 
   NAPI_TRY_TYPE(object, jval_object);
@@ -118,7 +118,7 @@ napi_status napi_has_own_property(napi_env env, napi_value object,
 napi_status napi_set_named_property(napi_env env, napi_value object,
                                     const char* utf8Name, napi_value value) {
   NAPI_TRY_ENV(env);
-  jerry_value_t jval_object = AS_JERRY_VALUE(object);
+  jerry_value_t jval_object = AS_JERRY_OBJECT(object);
   NAPI_TRY_TYPE(object, jval_object);
 
   jerry_value_t jval_key =
@@ -132,7 +132,7 @@ napi_status napi_set_named_property(napi_env env, napi_value object,
 napi_status napi_get_named_property(napi_env env, napi_value object,
                                     const char* utf8Name, napi_value* result) {
   NAPI_TRY_ENV(env);
-  jerry_value_t jval_object = AS_JERRY_VALUE(object);
+  jerry_value_t jval_object = AS_JERRY_OBJECT(object);
   NAPI_TRY_TYPE(object, jval_object);
 
   jerry_value_t jval_key =
@@ -146,7 +146,7 @@ napi_status napi_get_named_property(napi_env env, napi_value object,
 napi_status napi_has_named_property(napi_env env, napi_value object,
                                     const char* utf8Name, bool* result) {
   NAPI_TRY_ENV(env);
-  jerry_value_t jval_object = AS_JERRY_VALUE(object);
+  jerry_value_t jval_object = AS_JERRY_OBJECT(object);
   NAPI_TRY_TYPE(object, jval_object);
 
   jerry_value_t jval_key =
@@ -160,7 +160,7 @@ napi_status napi_has_named_property(napi_env env, napi_value object,
 napi_status napi_set_element(napi_env env, napi_value object, uint32_t index,
                              napi_value value) {
   NAPI_TRY_ENV(env);
-  jerry_value_t jval_object = AS_JERRY_VALUE(object);
+  jerry_value_t jval_object = AS_JERRY_OBJECT(object);
   jerry_value_t jval_val = AS_JERRY_VALUE(value);
 
   NAPI_TRY_TYPE(object, jval_object);
@@ -178,7 +178,7 @@ napi_status napi_set_element(napi_env env, napi_value object, uint32_t index,
 napi_status napi_get_element(napi_env env, napi_value object, uint32_t index,
                              napi_value* result) {
   NAPI_TRY_ENV(env);
-  jerry_value_t jval_object = AS_JERRY_VALUE(object);
+  jerry_value_t jval_object = AS_JERRY_OBJECT(object);
 
   NAPI_TRY_TYPE(object, jval_object);
 
@@ -194,7 +194,7 @@ napi_status napi_get_element(napi_env env, napi_value object, uint32_t index,
 napi_status napi_has_element(napi_env env, napi_value object, uint32_t index,
                              bool* result) {
   NAPI_TRY_ENV(env);
-  jerry_value_t jval_object = AS_JERRY_VALUE(object);
+  jerry_value_t jval_object = AS_JERRY_OBJECT(object);
   NAPI_TRY_TYPE(object, jval_object);
 
   char idx_str[17];
@@ -215,7 +215,7 @@ napi_status napi_has_element(napi_env env, napi_value object, uint32_t index,
 napi_status napi_delete_element(napi_env env, napi_value object, uint32_t index,
                                 bool* result) {
   NAPI_TRY_ENV(env);
-  jerry_value_t jval_object = AS_JERRY_VALUE(object);
+  jerry_value_t jval_object = AS_JERRY_OBJECT(object);
   NAPI_TRY_TYPE(object, jval_object);
 
   return napi_assign_bool(jerry_delete_property_by_index(jval_object, index),
@@ -290,7 +290,7 @@ napi_status napi_define_properties(napi_env env, napi_value object,
                                    size_t property_count,
                                    const napi_property_descriptor* properties) {
   NAPI_TRY_ENV(env);
-  jerry_value_t jval_target = AS_JERRY_VALUE(object);
+  jerry_value_t jval_target = AS_JERRY_OBJECT(object);
   NAPI_TRY_TYPE(object, jval_target);
   NAPI_WEAK_ASSERT(napi_invalid_arg, properties != NULL);
 
