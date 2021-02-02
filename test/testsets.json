@@ -1357,6 +1357,15 @@
       ]
     },
     {
+      "name": "test_napi_static_sqlite.js",
+      "required-features": [
+        "Symbol"
+      ],
+      "required-modules": [
+        "sqlite3"
+      ]
+    },
+    {
       "name": "test_napi_static_sqlite_require.js",
       "required-modules": [
         "sqlite3"
