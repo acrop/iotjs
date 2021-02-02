@@ -7,9 +7,6 @@
 #include <queue>
 #include <set>
 
-#include <sqlite3.h>
-#include <napi.h>
-
 using namespace Napi;
 
 namespace node_sqlite3 {

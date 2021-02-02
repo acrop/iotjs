@@ -2,7 +2,9 @@
 #include <sstream>
 #include <cstring>
 #include <string>
-#include <sqlite3.h>
+
+#define NODE_GYP_MODULE_NAME sqlite3
+#include "node_api_static.h"
 
 #include "macros.h"
 #include "database.h"
@@ -112,4 +114,8 @@ const char* sqlite_authorizer_string(int type) {
     }
 }
 
-NODE_API_MODULE(node_sqlite3, RegisterModule)
+static napi_value Init(napi_env env, napi_value exports) {
+  return Napi::RegisterModule(env, exports, RegisterModule);
+}
+
+NAPI_MODULE_STATIC(NODE_GYP_MODULE_NAME, Init)

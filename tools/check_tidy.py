@@ -213,7 +213,7 @@ def check_tidy(src_dir, options=None):
     allowed_files = ['CMakeLists.txt']
     clang_format_exts = ['.c', '.h']
     skip_dirs = ['deps', 'build', '.git', 'node_modules', 'coverage',
-                 'iotjs_modules', 'IoTjsApp']
+                 'iotjs_modules', 'IoTjsApp', 'sqlite3']
     skip_files = ['check_license.py', 'check_signed_off.sh', '__init__.py',
                   'iotjs_js.c', 'iotjs_js.h', 'iotjs_string_ext.inl.h',
                   "iotjs_module_inl.h",
@@ -226,8 +226,12 @@ def check_tidy(src_dir, options=None):
                   'ble_hci_socket_mgmt.js',
                   'ble_hci_socket_bindings.js',
                   'ble_characteristic.js',
+                  'sqlite3.js',
                   'node_api.h',
                   'node_api_types.h',
+                  'napi-inl.h',
+                  'napi.h',
+                  'napi-inl.deprecated.h',
                   'test_ble_setservices.js',
                   '.eslintrc.js',
                   'c_source_templates.py',

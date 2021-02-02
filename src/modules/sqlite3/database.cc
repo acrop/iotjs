@@ -7,10 +7,6 @@
 
 using namespace node_sqlite3;
 
-#if NAPI_VERSION < 6
-Napi::FunctionReference Database::constructor;
-#endif
-
 Napi::Object Database::Init(Napi::Env env, Napi::Object exports) {
     Napi::HandleScope scope(env);
 
@@ -27,8 +23,7 @@ Napi::Object Database::Init(Napi::Env env, Napi::Object exports) {
     });
 
 #if NAPI_VERSION < 6
-    constructor = Napi::Persistent(t);
-    constructor.SuppressDestruct();
+    env.Global().Set("__sqlite3_database_constructor", t);
 #else
     Napi::FunctionReference* constructor = new Napi::FunctionReference();
     *constructor = Napi::Persistent(t);

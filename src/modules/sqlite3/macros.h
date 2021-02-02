@@ -95,21 +95,25 @@ inline bool OtherIsInt(Napi::Number source) {
     Napi::PropertyDescriptor::Value(#name, Napi::String::New(env, constant),   \
         static_cast<napi_property_attributes>(napi_enumerable | napi_configurable)),
 
-#define EXCEPTION(msg, errno, name)                                            \
-    Napi::Value name = Napi::Error::New(env,                                   \
-        StringConcat(                                                          \
-            StringConcat(                                                      \
-                Napi::String::New(env, sqlite_code_string(errno)),             \
-                Napi::String::New(env, ": ")                                   \
-            ),                                                                 \
-            (msg)                                                              \
-        ).Utf8Value()                                                          \
-    ).Value();                                                                 \
-    Napi::Object name ##_obj = name.As<Napi::Object>();                        \
-    (name ##_obj).Set( Napi::String::New(env, "errno"), Napi::Number::New(env, errno)); \
-    (name ##_obj).Set( Napi::String::New(env, "code"),                         \
-        Napi::String::New(env, sqlite_code_string(errno)));
+inline Napi::Value CreateException(Napi::Env &env, const Napi::String &msg, int err) {
+    Napi::Value err_object = Napi::Error::New(env,
+            StringConcat(
+                StringConcat(
+                    Napi::String::New(env, sqlite_code_string(err)),
+                    Napi::String::New(env, ": ")
+                ),
+                (msg)
+            ).Utf8Value()
+        ).Value();
+    Napi::Object obj = err_object.As<Napi::Object>();
+    obj.Set( Napi::String::New(env, "errno"), Napi::Number::New(env, err));
+    obj.Set( Napi::String::New(env, "code"),
+        Napi::String::New(env, sqlite_code_string(err)));
+    return err_object;
+}
 
+#define EXCEPTION(msg, errno, name)                                            \
+    Napi::Value name = CreateException(env, msg, errno)
 
 #define EMIT_EVENT(obj, argc, argv)                                            \
     TRY_CATCH_CALL((obj),                                                      \

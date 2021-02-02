@@ -2,3 +2,4 @@
 /deps/**
 /src/js/ble*
 /test/test-server
+/src/js/sqlite3.js

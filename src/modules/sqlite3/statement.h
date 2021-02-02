@@ -7,8 +7,6 @@
 #include <queue>
 #include <vector>
 
-#include <sqlite3.h>
-#include <napi.h>
 #include <uv.h>
 
 #include "database.h"

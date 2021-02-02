@@ -1,6 +1,5 @@
-var path = require('path');
-var sqlite3 = require('./sqlite3-binding.js');
 var EventEmitter = require('events').EventEmitter;
+var sqlite3 = native;
 module.exports = exports = sqlite3;
 
 function normalizeMethod (fn) {
@@ -33,7 +32,6 @@ sqlite3.cached = {
         }
 
         var db;
-        file = path.resolve(file);
         function cb() { callback.call(db, null); }
 
         if (!sqlite3.cached.objects[file]) {

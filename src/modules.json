@@ -314,6 +314,18 @@
       "init": "iotjs_init_spi",
       "js_file": "js/spi.js"
     },
+    "sqlite3": {
+      "require": ["napi", "events"],
+      "native_files": [
+        "modules/sqlite3/backup.cc",
+        "modules/sqlite3/database.cc",
+        "modules/sqlite3/node_sqlite3.cc",
+        "modules/sqlite3/statement.cc",
+        "modules/sqlite3/sqlite3.c"
+      ],
+      "init": "iotjs_sqlite3_napi_init",
+      "js_file": "js/sqlite3.js"
+    },
     "stm32f4dis": {
       "platforms": {
         "nuttx": {
