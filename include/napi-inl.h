@@ -59,6 +59,7 @@ static inline napi_status AttachData(napi_env env,
       };
       status = napi_define_properties(env, obj, 1, &desc);
     }
+    /* TODO: when status failed destroy symbol and external */
   }
 #else  // NAPI_VERSION >= 5
   if (status == napi_ok) {
