@@ -1730,7 +1730,10 @@ namespace Napi {
                                             napi_property_attributes attributes = napi_default);
 
    protected:
-    static void AttachPropData(napi_env env, napi_value value, const napi_property_descriptor* prop);
+    static napi_status AttachPropData(napi_env env,
+                                      napi_status status,
+                                      napi_value value,
+                                      const napi_property_descriptor* prop);
 
    private:
     using This = InstanceWrap<T>;

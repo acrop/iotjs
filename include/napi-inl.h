@@ -25,11 +25,11 @@ namespace details {
 // available on all supported versions of Node.js.
 template <typename FreeType>
 static inline napi_status AttachData(napi_env env,
+                                     napi_status status,
                                      napi_value obj,
                                      FreeType* data,
                                      napi_finalize finalizer = nullptr,
                                      void* hint = nullptr) {
-  napi_status status;
   if (finalizer == nullptr) {
     finalizer = [](napi_env /*env*/, void* data, void* /*hint*/) {
       delete static_cast<FreeType*>(data);
@@ -37,7 +37,9 @@ static inline napi_status AttachData(napi_env env,
   }
 #if (NAPI_VERSION < 5)
   napi_value symbol, external;
-  status = napi_create_symbol(env, nullptr, &symbol);
+  if (status == napi_ok) {
+    status = napi_create_symbol(env, nullptr, &symbol);
+  }
   if (status == napi_ok) {
     status = napi_create_external(env,
                               data,
@@ -59,8 +61,13 @@ static inline napi_status AttachData(napi_env env,
     }
   }
 #else  // NAPI_VERSION >= 5
-  status = napi_add_finalizer(env, obj, data, finalizer, hint, nullptr);
+  if (status == napi_ok) {
+    status = napi_add_finalizer(env, obj, data, finalizer, hint, nullptr);
+  }
 #endif
+  if (status != napi_ok) {
+    finalizer(env, data, hint);
+  }
   return status;
 }
 
@@ -1349,6 +1356,7 @@ inline void Object::AddFinalizer(Finalizer finalizeCallback, T* data) {
     new details::FinalizeData<T, Finalizer>({ finalizeCallback, nullptr });
   napi_status status =
       details::AttachData(_env,
+                          napi_ok,
                           *this,
                           data,
                           details::FinalizeData<T, Finalizer>::Wrapper,
@@ -1367,6 +1375,7 @@ inline void Object::AddFinalizer(Finalizer finalizeCallback,
     new details::FinalizeData<T, Finalizer, Hint>({ finalizeCallback, finalizeHint });
   napi_status status =
       details::AttachData(_env,
+                          napi_ok,
                           *this,
                           data,
                           details::FinalizeData<T, Finalizer, Hint>::WrapperWithHint,
@@ -1926,17 +1935,15 @@ inline const T* TypedArrayOf<T>::Data() const {
 template <typename CbData>
 static inline napi_status
 CreateFunction(napi_env env,
+               napi_status status,
                const char* utf8name,
                napi_callback cb,
                CbData* data,
                napi_value* result) {
-  napi_status status =
-      napi_create_function(env, utf8name, NAPI_AUTO_LENGTH, cb, data, result);
   if (status == napi_ok) {
-    status = Napi::details::AttachData(env, *result, data);
+      status = napi_create_function(env, utf8name, NAPI_AUTO_LENGTH, cb, data, result);
   }
-
-  return status;
+  return Napi::details::AttachData(env, status, *result, data);
 }
 
 template <Function::VoidCallback cb>
@@ -1988,16 +1995,14 @@ inline Function Function::New(napi_env env,
   typedef details::CallbackData<Callable, ReturnType> CbData;
   auto callbackData = new CbData({ cb, data });
 
-  napi_value value;
+  napi_value value = NULL;
   napi_status status = CreateFunction(env,
+                                      napi_ok,
                                       utf8name,
                                       CbData::Wrapper,
                                       callbackData,
                                       &value);
-  if (status != napi_ok) {
-    delete callbackData;
-    NAPI_THROW_IF_FAILED(env, status, Function());
-  }
+  NAPI_THROW_IF_FAILED(env, status, Function());
 
   return Function(env, value);
 }
@@ -3039,9 +3044,8 @@ PropertyDescriptor::Accessor(Napi::Env env,
   typedef details::CallbackData<Getter, Napi::Value> CbData;
   auto callbackData = new CbData({ getter, data });
 
-  napi_status status = AttachData(env, object, callbackData);
+  napi_status status = AttachData(env, napi_ok, object, callbackData);
   if (status != napi_ok) {
-    delete callbackData;
     NAPI_THROW_IF_FAILED(env, status, napi_property_descriptor());
   }
 
@@ -3077,9 +3081,8 @@ inline PropertyDescriptor PropertyDescriptor::Accessor(Napi::Env env,
   typedef details::CallbackData<Getter, Napi::Value> CbData;
   auto callbackData = new CbData({ getter, data });
 
-  napi_status status = AttachData(env, object, callbackData);
+  napi_status status = AttachData(env, napi_ok, object, callbackData);
   if (status != napi_ok) {
-    delete callbackData;
     NAPI_THROW_IF_FAILED(env, status, napi_property_descriptor());
   }
 
@@ -3106,9 +3109,8 @@ inline PropertyDescriptor PropertyDescriptor::Accessor(Napi::Env env,
   typedef details::AccessorCallbackData<Getter, Setter> CbData;
   auto callbackData = new CbData({ getter, setter, data });
 
-  napi_status status = AttachData(env, object, callbackData);
+  napi_status status = AttachData(env, napi_ok, object, callbackData);
   if (status != napi_ok) {
-    delete callbackData;
     NAPI_THROW_IF_FAILED(env, status, napi_property_descriptor());
   }
 
@@ -3146,9 +3148,8 @@ inline PropertyDescriptor PropertyDescriptor::Accessor(Napi::Env env,
   typedef details::AccessorCallbackData<Getter, Setter> CbData;
   auto callbackData = new CbData({ getter, setter, data });
 
-  napi_status status = AttachData(env, object, callbackData);
+  napi_status status = AttachData(env, napi_ok, object, callbackData);
   if (status != napi_ok) {
-    delete callbackData;
     NAPI_THROW_IF_FAILED(env, status, napi_property_descriptor());
   }
 
@@ -3259,29 +3260,30 @@ inline PropertyDescriptor::operator const napi_property_descriptor&() const {
 ////////////////////////////////////////////////////////////////////////////////
 
 template <typename T>
-inline void InstanceWrap<T>::AttachPropData(napi_env env,
+inline napi_status InstanceWrap<T>::AttachPropData(napi_env env,
+                                       napi_status status,
                                        napi_value value,
                                        const napi_property_descriptor* prop) {
-  napi_status status;
-  if (prop->method != nullptr && !(prop->attributes & napi_static)) {
+  if (!(prop->attributes & napi_static)) {
     if (prop->method == T::InstanceVoidMethodCallbackWrapper) {
-      status = Napi::details::AttachData(env,
+      return Napi::details::AttachData(env,
+                    status,
                     value,
                     static_cast<InstanceVoidMethodCallbackData*>(prop->data));
-      NAPI_THROW_IF_FAILED_VOID(env, status);
     } else if (prop->method == T::InstanceMethodCallbackWrapper) {
-      status = Napi::details::AttachData(env,
+      return Napi::details::AttachData(env,
+                        status,
                         value,
                         static_cast<InstanceMethodCallbackData*>(prop->data));
-      NAPI_THROW_IF_FAILED_VOID(env, status);
     } else if (prop->getter == T::InstanceGetterCallbackWrapper ||
         prop->setter == T::InstanceSetterCallbackWrapper) {
-      status = Napi::details::AttachData(env,
+        return Napi::details::AttachData(env,
+                          status,
                           value,
                           static_cast<InstanceAccessorCallbackData*>(prop->data));
-      NAPI_THROW_IF_FAILED_VOID(env, status);
     }
   }
+  return status;
 }
 
 template <typename T>
@@ -3621,7 +3623,7 @@ ObjectWrap<T>::DefineClass(Napi::Env env,
                            const size_t props_count,
                            const napi_property_descriptor* descriptors,
                            void* data) {
-  napi_status status;
+  napi_status status = napi_ok;
   std::vector<napi_property_descriptor> props(props_count);
 
   // We copy the descriptors to a local array because before defining the class
@@ -3637,35 +3639,36 @@ ObjectWrap<T>::DefineClass(Napi::Env env,
     napi_property_descriptor* prop = &props[index];
     if (prop->method == T::StaticMethodCallbackWrapper) {
       status = CreateFunction(env,
+                             status,
                              utf8name,
                              prop->method,
                              static_cast<StaticMethodCallbackData*>(prop->data),
                &(prop->value));
-      NAPI_THROW_IF_FAILED(env, status, Function());
       prop->method = nullptr;
       prop->data = nullptr;
     } else if (prop->method == T::StaticVoidMethodCallbackWrapper) {
       status = CreateFunction(env,
+                         status,
                          utf8name,
                          prop->method,
                          static_cast<StaticVoidMethodCallbackData*>(prop->data),
                          &(prop->value));
-      NAPI_THROW_IF_FAILED(env, status, Function());
       prop->method = nullptr;
       prop->data = nullptr;
     }
   }
 
-  napi_value value;
-  status = napi_define_class(env,
-                             utf8name,
-                             NAPI_AUTO_LENGTH,
-                             T::ConstructorCallbackWrapper,
-                             data,
-                             props_count,
-                             props.data(),
-                             &value);
-  NAPI_THROW_IF_FAILED(env, status, Function());
+  napi_value value = NULL;
+  if (status == napi_ok) {
+    status = napi_define_class(env,
+                              utf8name,
+                              NAPI_AUTO_LENGTH,
+                              T::ConstructorCallbackWrapper,
+                              data,
+                              props_count,
+                              props.data(),
+                              &value);
+  }
 
   // After defining the class we iterate once more over the property descriptors
   // and attach the data associated with accessors and instance methods to the
@@ -3676,16 +3679,16 @@ ObjectWrap<T>::DefineClass(Napi::Env env,
     if (prop->getter == T::StaticGetterCallbackWrapper ||
         prop->setter == T::StaticSetterCallbackWrapper) {
       status = Napi::details::AttachData(env,
+                          status,
                           value,
                           static_cast<StaticAccessorCallbackData*>(prop->data));
-      NAPI_THROW_IF_FAILED(env, status, Function());
     } else {
       // InstanceWrap<T>::AttachPropData is responsible for attaching the data
       // of instance methods and accessors.
-      T::AttachPropData(env, value, prop);
+      status = T::AttachPropData(env, status, value, prop);
     }
   }
-
+  NAPI_THROW_IF_FAILED(env, status, Function());
   return Function(env, value);
 }
 
@@ -5625,9 +5628,10 @@ Addon<T>::DefineProperties(Object object,
                                               object,
                                               size,
                                               properties);
+  for (size_t idx = 0; idx < size; idx++) {
+    status = T::AttachPropData(object.Env(), status, object, &properties[idx]);
+  }
   NAPI_THROW_IF_FAILED(object.Env(), status, object);
-  for (size_t idx = 0; idx < size; idx++)
-    T::AttachPropData(object.Env(), object, &properties[idx]);
   return object;
 }
 #endif  // NAPI_VERSION > 5
