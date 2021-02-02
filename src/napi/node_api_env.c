@@ -220,8 +220,8 @@ napi_status napi_get_last_error_info(napi_env env,
 
 void napi_fatal_error(const char* location, size_t location_len,
                       const char* message, size_t message_len) {
-  fprintf(stderr, "FATAL ERROR: %.*s %.*s\n", location_len, location,
-          message_len, message);
+  fprintf(stderr, "FATAL ERROR: %.*s %.*s\n", (int)location_len, location,
+          (int)message_len, message);
   print_stacktrace();
   abort();
 }
