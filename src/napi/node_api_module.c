@@ -65,7 +65,7 @@ int napi_module_init_pending(jerry_value_t* exports) {
     if (jval_err == (uintptr_t)NULL) {
       jval_err = iotjs_napi_env_get_and_clear_fatal_exception(env);
     }
-    jerry_release_value(jval_exports);
+    jerry_release_value(*exports);
     *exports = jval_err;
     return napi_pending_exception;
   }
