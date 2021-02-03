@@ -23,21 +23,6 @@ class Database : public Napi::ObjectWrap<Database> {
 public:
     static Napi::Object Init(Napi::Env env, Napi::Object exports);
 
-    static inline bool HasInstance(Napi::Value val) {
-        Napi::Env env = val.Env();
-        Napi::HandleScope scope(env);
-        if (!val.IsObject()) return false;
-        Napi::Object obj = val.As<Napi::Object>();
-#if NAPI_VERSION < 6
-        Napi::Value constructor = env.Global().Get("__sqlite3_database_constructor");
-        return obj.InstanceOf(constructor.As<Function>());
-#else
-        Napi::FunctionReference* constructor =
-            env.GetInstanceData<Napi::FunctionReference>();
-        return obj.InstanceOf(constructor->Value());
-#endif
-    }
-
     struct Baton {
         napi_async_work request = NULL;
         Database* db;

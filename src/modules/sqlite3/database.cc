@@ -22,14 +22,6 @@ Napi::Object Database::Init(Napi::Env env, Napi::Object exports) {
         InstanceAccessor("open", &Database::OpenGetter, nullptr)
     });
 
-#if NAPI_VERSION < 6
-    env.Global().Set("__sqlite3_database_constructor", t);
-#else
-    Napi::FunctionReference* constructor = new Napi::FunctionReference();
-    *constructor = Napi::Persistent(t);
-    env.SetInstanceData<Napi::FunctionReference>(constructor);
-#endif
-
     exports.Set("Database", t);
     return exports;
 }

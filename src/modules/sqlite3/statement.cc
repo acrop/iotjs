@@ -86,10 +86,11 @@ template <class T> void Statement::Error(T* baton) {
 
 // { Database db, String sql, Array params, Function callback }
 Statement::Statement(const Napi::CallbackInfo& info) : Napi::ObjectWrap<Statement>(info) {
+    this->db = NULL;
     Napi::Env env = info.Env();
     int length = info.Length();
 
-    if (length <= 0 || !Database::HasInstance(info[0])) {
+    if (length <= 0) {
         Napi::TypeError::New(env, "Database object expected").ThrowAsJavaScriptException();
         return;
     }
