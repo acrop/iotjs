@@ -129,6 +129,8 @@ if(EXPERIMENTAL)
   iotjs_add_compile_flags(-DEXPERIMENTAL)
 endif()
 
+iotjs_add_compile_flags(-DNAPI_DISABLE_CPP_EXCEPTIONS)
+
 # Add arch-dependant flags
 if(NOT DEFINED TARGET_ARCH)
   message(WARNING "Use generic flags since TARGET_ARCH is not defined")
