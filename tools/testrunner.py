@@ -256,6 +256,7 @@ class TestRunner(object):
             valgrind_options = [
                 "--leak-check=full",
                 "--error-exitcode=5",
+                "--num-callers=200",
                 "--undef-value-errors=no"
             ]
 

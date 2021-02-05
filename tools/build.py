@@ -227,6 +227,9 @@ def adjust_options(options):
     if options.target_os == 'darwin':
         options.no_check_valgrind = True
 
+    if options.target_os == 'windows':
+        options.no_check_valgrind = True
+
     if options.target_board in ['rpi2', 'rpi3', 'artik10', 'artik05x']:
         options.no_check_valgrind = True
 
@@ -331,7 +334,6 @@ def build_iotjs(options):
         '-DTARGET_OS=%s' % options.target_os,
         '-DTARGET_BOARD=%s' % options.target_board,
         '-DENABLE_LTO=%s' % get_on_off(options.jerry_lto), # --jerry-lto
-        '-DENABLE_MODULE_NAPI=%s' % get_on_off(options.n_api), # --n-api
         '-DENABLE_SNAPSHOT=%s' % get_on_off(not options.no_snapshot),
         '-DEXPOSE_GC=%s' % get_on_off(options.expose_gc), # --exposing gc
         '-DBUILD_LIB_ONLY=%s' % get_on_off(options.buildlib), # --buildlib
@@ -424,11 +426,11 @@ def run_checktest(options):
             env['CC'] = 'i686-linux-gnu-gcc'
             env['CXX'] = 'i686-linux-gnu-g++'
 
-    code = ex.run_cmd(cmd, [testrunner_script] + args, env=env)
-    if code != 0:
-        ex.fail('Failed to pass unit tests')
-
-    if not options.no_check_valgrind and options.target_os != 'windows':
+    if options.no_check_valgrind:
+        code = ex.run_cmd(cmd, [testrunner_script] + args, env=env)
+        if code != 0:
+            ex.fail('Failed to pass unit tests')
+    else:
         code = ex.run_cmd(cmd, [testrunner_script, '--valgrind'] + args, env=env)
         if code != 0:
             ex.fail('Failed to pass unit tests in valgrind environment')

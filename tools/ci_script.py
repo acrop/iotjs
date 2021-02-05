@@ -15,6 +15,8 @@
 # limitations under the License.
 
 import os
+import sys
+import argparse
 
 from common_py.system.filesystem import FileSystem as fs
 from common_py.system.executor import Executor as ex
@@ -51,19 +53,15 @@ DOCKER_NUTTX_APPS_PATH = fs.join(DOCKER_ROOT_PATH, 'apps')
 DOCKER_NAME = 'iotjs_docker'
 DOCKER_TAG = 'lygstate/iotjs:latest'
 BUILDTYPES = ['debug', 'release']
+JERRY_PROFILES = ['es5.1', 'es.next']
 TIZENRT_TAG = '2.0_Public_M2'
 
 # Common buildoptions for sanitizer jobs.
 BUILDOPTIONS_SANITIZER = [
     '--compile-flag=-fno-common',
     '--compile-flag=-fno-omit-frame-pointer',
-    '--jerry-cmake-param=-DJERRY_SYSTEM_ALLOCATOR=ON',
     '--no-check-valgrind',
     '--no-snapshot',
-    '--profile=test/profiles/host-linux-napi.profile',
-    '--run-test=full',
-    '--target-arch=i686',
-    '--n-api',
 ]
 
 def start_container():
@@ -116,12 +114,77 @@ def set_config_tizenrt(buildtype):
                 fs.join(DOCKER_TIZENRT_OS_PATH, '.config')])
 
 def build_iotjs(buildtype, args=[], env=[]):
-    exec_docker(DOCKER_IOTJS_PATH, [
-                './tools/build.py',
-                '--clean',
-                '--buildtype=' + buildtype] + args, env)
+    cmd_args = ['./tools/build.py',
+                '--buildtype=' + buildtype] + args
+    print(' '.join(cmd_args))
+    exec_docker(DOCKER_IOTJS_PATH, cmd_args, env)
 
 JOBS = dict()
+
+def init_options():
+    argv = sys.argv[1:]
+
+    # Prepare argument parser.
+    parser = argparse.ArgumentParser(description='Building tool for IoT.js '
+        'JavaScript framework for embedded systems.')
+
+    iotjs_build_group = parser.add_argument_group('Arguments of building IoT.js',
+        'The following arguments are related to building IoT.js framework.')
+    iotjs_build_group.add_argument('--buildtype',
+        choices=['debug', 'release'], default=None, type=str.lower,
+        help='Specify the build type (default: %(default)s).')
+    iotjs_build_group.add_argument('--profile',
+        help='Specify the module profile file for IoT.js')
+    iotjs_build_group.add_argument('--jerry-profile',
+        metavar='FILE', action='store', default=None,
+        help='Specify the profile for JerryScript (default: %(default)s). '
+             'Possible values are "es5.1", "es.next" or an absolute '
+             'path to a custom JerryScript profile file.')
+    iotjs_build_group.add_argument('--target-arch',
+        choices=['arm', 'x86', 'i686', 'x86_64', 'x64', 'mips', 'noarch'],
+        default=platform.arch(),
+        help='Specify the target architecture (default: %(default)s).')
+    iotjs_build_group.add_argument('--no-check-valgrind',
+        action='store_true', default=False,
+        help='Disable test execution with valgrind after build')
+    iotjs_build_group.add_argument('--cmake-param',
+        action='append', default=[],
+        help='Specify additional cmake parameters '
+             '(can be used multiple times)')
+    iotjs_build_group.add_argument('--jerry-cmake-param',
+        action='append', default=[],
+        help='Specify additional cmake parameters for JerryScript '
+        '(can be used multiple times)')
+    iotjs_build_group.add_argument('--jerry-heaplimit',
+        type=int, default=None,
+        help='Specify the size of the JerryScript max heap size '
+                '(default: %(default)s)')
+    iotjs_build_group.add_argument('--external-modules',
+        action='store', default=set(), type=lambda x: set(x.split(',')),
+        help='Specify the path of modules.json files which should be processed '
+             '(format: path1,path2,...)')
+    iotjs_build_group.add_argument('--clean', action='store_true', default=False,
+        help='Clean build directory before build (default: %(default)s)')
+    iotjs_build_group.add_argument('--compile-flag',
+        action='append', default=[],
+        help='Specify additional compile flags (can be used multiple times)')
+    options = parser.parse_args(argv)
+    if options.buildtype is None:
+        options.BUILDTYPES = BUILDTYPES
+    else:
+        argv = [arg for arg in argv if not arg.startswith('--buildtype=')]
+        options.BUILDTYPES = [options.buildtype]
+    if options.jerry_profile is None:
+        options.JERRY_PROFILES = JERRY_PROFILES
+    else:
+        argv = [arg for arg in argv if not arg.startswith('--jerry-profile=')]
+        options.JERRY_PROFILES = [options.jerry_profile]
+    argv = argv + ['--run-test=full']
+    if len(options.JERRY_PROFILES) == 2 and not options.clean:
+        options.clean = True
+        argv = argv + ['--clean']
+    options.argv = argv
+    return options
 
 class job(object):
     def __init__(self, name):
@@ -129,61 +192,75 @@ class job(object):
     def __call__(self, fn):
         JOBS[self.name] = fn
 
-@job('host-linux')
-def job_host_linux():
+@job('linux')
+def job_linux(options):
     start_container()
+    for buildtype in options.BUILDTYPES:
+        for jerry_profile in options.JERRY_PROFILES:
+            build_iotjs(buildtype, options.argv + [
+                        '--jerry-profile=' + jerry_profile,
+                        '--cmake-param=-DENABLE_MODULE_ASSERT=ON',
+                    ])
 
-    for buildtype in BUILDTYPES:
-        build_iotjs(buildtype, [
-                    '--cmake-param=-DENABLE_MODULE_ASSERT=ON',
-                    '--run-test=full',
-                    '--profile=profiles/minimal.profile'])
-
-    for buildtype in BUILDTYPES:
-        build_iotjs(buildtype, [
-                    '--run-test=full',
-                    '--profile=test/profiles/host-linux.profile'])
-
-# N-API should work with both ES5.1 and ES2015-subset JerryScript profiles
-@job('n-api')
-def job_n_api():
+@job('linux-asan')
+def job_asan(options):
     start_container()
+    for buildtype in options.BUILDTYPES:
+        for jerry_profile in options.JERRY_PROFILES:
+            build_iotjs(buildtype, options.argv + [
+                        '--jerry-profile=' + jerry_profile,
+                        '--compile-flag=-fsanitize=address',
+                        ] + BUILDOPTIONS_SANITIZER,
+                        ['ASAN_OPTIONS=detect_stack_use_after_return=1:'
+                        'check_initialization_order=true:strict_init_order=true',
+                        'TIMEOUT=600'])
 
-    for buildtype in BUILDTYPES:
-        build_iotjs(buildtype, [
-                    '--run-test=full',
-                    '--profile=test/profiles/host-linux-napi.profile',
-                    '--n-api'])
-
-@job('n-api-es2015-subset')
-def job_n_api():
+@job('linux-ubsan')
+def job_ubsan(options):
     start_container()
-    for buildtype in BUILDTYPES:
-        build_iotjs(buildtype, [
-                    '--run-test=full',
-                    '--n-api',
-                    '--profile=test/profiles/host-linux-napi.profile',
-                    '--jerry-profile=es2015-subset'])
+    for buildtype in options.BUILDTYPES:
+        for jerry_profile in options.JERRY_PROFILES:
+            build_iotjs(buildtype, options.argv + [
+                            '--jerry-profile=' + jerry_profile,
+                            '--compile-flag=-fsanitize=undefined',
+                        ] + BUILDOPTIONS_SANITIZER,
+                        ['UBSAN_OPTIONS=print_stacktrace=1', 'TIMEOUT=600']
+                        )
 
-@job('mock-linux')
-def job_mock_linux():
+@job('linux-no-snapshot')
+def job_no_snapshot(options):
     start_container()
-    for buildtype in BUILDTYPES:
-        build_iotjs(buildtype, [
-                    '--run-test=full',
-                    '--target-os=mock',
-                    '--profile=test/profiles/mock-linux.profile'])
+    for buildtype in options.BUILDTYPES:
+        for jerry_profile in options.JERRY_PROFILES:
+            build_iotjs(buildtype, options.argv + [
+                            '--jerry-profile=' + jerry_profile,
+                            '--no-snapshot',
+                    ])
+
+@job('linux-mock')
+def job_linux_mock(options):
+    start_container()
+    for buildtype in options.BUILDTYPES:
+        for jerry_profile in options.JERRY_PROFILES:
+            build_iotjs(buildtype, [
+                            '--jerry-profile=' + jerry_profile,
+                            '--target-os=mock',
+                            '--profile=test/profiles/mock-linux.profile',
+                        ])
 
 @job('rpi2')
-def job_rpi2():
+def job_rpi2(options):
     start_container()
-    for buildtype in BUILDTYPES:
-        build_iotjs(buildtype, [
-                    '--target-arch=arm',
-                    '--target-board=rpi2',
-                    '--profile=test/profiles/rpi2-linux.profile'])
+    for buildtype in options.BUILDTYPES:
+        for jerry_profile in options.JERRY_PROFILES:
+            build_iotjs(buildtype, [
+                        '--jerry-profile=' + jerry_profile,
+                        '--target-arch=arm',
+                        '--target-board=rpi2',
+                        '--profile=test/profiles/rpi2-linux.profile'])
+
 @job('stm32f4dis')
-def job_stm32f4dis():
+def job_stm32f4dis(options):
     start_container()
 
     # Copy the application files to apps/system/iotjs.
@@ -199,7 +276,7 @@ def job_stm32f4dis():
                 fs.join(DOCKER_NUTTX_PATH,
                         'configs/stm32f4discovery/usbnsh/defconfig')])
 
-    for buildtype in BUILDTYPES:
+    for buildtype in options.BUILDTYPES:
         exec_docker(DOCKER_NUTTX_PATH, ['make', 'distclean'])
         exec_docker(DOCKER_NUTTX_TOOLS_PATH,
                     ['./configure.sh', 'stm32f4discovery/usbnsh'])
@@ -223,9 +300,9 @@ def job_stm32f4dis():
                     'IOTJS_ROOT_DIR=' + DOCKER_IOTJS_PATH, rflag])
 
 @job('tizen')
-def job_tizen():
+def job_tizen(options):
     start_container()
-    for buildtype in BUILDTYPES:
+    for buildtype in options.BUILDTYPES:
         if buildtype == "debug":
             exec_docker(DOCKER_IOTJS_PATH, [
                         'config/tizen/gbsbuild.sh',
@@ -235,68 +312,24 @@ def job_tizen():
                         '--clean'])
 
 @job('misc')
-def job_misc():
+def job_misc(options):
     # ex.check_run_cmd('tools/check_signed_off.sh', ['--travis'])
     ex.check_run_cmd('tools/check_tidy.py')
 
-@job('external-modules')
-def job_external_modules():
-    start_container()
-    for buildtype in BUILDTYPES:
-        build_iotjs(buildtype, [
-                    '--run-test=full',
-                    '--profile=test/profiles/host-linux.profile',
-                    '--external-modules=test/external_modules/'
-                    'mymodule1,test/external_modules/mymodule2',
-                    '--cmake-param=-DENABLE_MODULE_MYMODULE1=ON',
-                    '--cmake-param=-DENABLE_MODULE_MYMODULE2=ON'])
-
-@job('es2015')
-def job_es2015():
-    start_container()
-    for buildtype in BUILDTYPES:
-        build_iotjs(buildtype, [
-                    '--run-test=full',
-                    '--jerry-profile=es2015-subset'])
-
-@job('no-snapshot')
-def job_no_snapshot():
-    start_container()
-    for buildtype in BUILDTYPES:
-        build_iotjs(buildtype, ['--run-test=full', '--no-snapshot',
-                                '--jerry-lto'])
-
 @job('host-darwin')
-def job_host_darwin():
-    for buildtype in BUILDTYPES:
-        ex.check_run_cmd('./tools/build.py', [
-                         '--run-test=full',
-                         '--buildtype=' + buildtype,
-                         '--clean',
-                         '--profile=test/profiles/host-darwin.profile'])
-
-@job('asan')
-def job_asan():
-    start_container()
-    build_iotjs('debug', [
-                '--compile-flag=-fsanitize=address',
-                '--compile-flag=-O2'
-                ] + BUILDOPTIONS_SANITIZER,
-                ['ASAN_OPTIONS=detect_stack_use_after_return=1:'
-                'check_initialization_order=true:strict_init_order=true',
-                'TIMEOUT=600'])
-
-@job('ubsan')
-def job_ubsan():
-    start_container()
-    build_iotjs('debug', [
-                '--compile-flag=-fsanitize=undefined'
-                ] + BUILDOPTIONS_SANITIZER,
-                ['UBSAN_OPTIONS=print_stacktrace=1', 'TIMEOUT=600'])
+def job_host_darwin(options):
+    for buildtype in options.BUILDTYPES:
+        for jerry_profile in options.JERRY_PROFILES:
+            ex.check_run_cmd('./tools/build.py', [
+                            '--run-test=full',
+                            '--buildtype=' + buildtype,
+                            '--jerry-profile=' + jerry_profile,
+                            '--profile=test/profiles/host-darwin.profile'])
 
 @job('coverity')
-def job_coverity():
+def job_coverity(options):
     ex.check_run_cmd('./tools/build.py', ['--clean'])
 
 if __name__ == '__main__':
-    JOBS[os.getenv('OPTS')]()
+    options = init_options()
+    JOBS[os.getenv('OPTS')](options)
