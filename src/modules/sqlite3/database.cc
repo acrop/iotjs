@@ -311,7 +311,10 @@ Napi::Value Database::Serialize(const Napi::CallbackInfo& info) {
     db->serialize = true;
 
     if (!callback.IsEmpty() && callback.IsFunction()) {
-        TRY_CATCH_CALL(info.This(), callback, 0, NULL, info.This());
+        TRY_CATCH_CALL(info.This(), callback, 0, NULL);
+        if (env.IsExceptionPending()) {
+            return info.This();
+        }
         db->serialize = before;
     }
 
@@ -329,7 +332,10 @@ Napi::Value Database::Parallelize(const Napi::CallbackInfo& info) {
     db->serialize = false;
 
     if (!callback.IsEmpty() && callback.IsFunction()) {
-        TRY_CATCH_CALL(info.This(), callback, 0, NULL, info.This());
+        TRY_CATCH_CALL(info.This(), callback, 0, NULL);
+        if (env.IsExceptionPending()) {
+            return info.This();
+        }
         db->serialize = before;
     }
 
