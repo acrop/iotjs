@@ -1366,7 +1366,27 @@
       ]
     },
     {
+      "name": "test_napi_static_sqlite_expect_failed.js",
+      "expected-failure": true,
+      "required-features": [
+        "Symbol"
+      ],
+      "required-modules": [
+        "sqlite3"
+      ]
+    },
+    {
       "name": "test_napi_static_sqlite_require.js",
+      "required-modules": [
+        "sqlite3"
+      ]
+    },
+    {
+      "name": "test_napi_static_sqlite_throw_primitive.js",
+      "expected-failure": true,
+      "required-features": [
+        "Symbol"
+      ],
       "required-modules": [
         "sqlite3"
       ]

@@ -59,7 +59,9 @@ static void iotjs_uv_work_after_cb(uv_work_t* req, int status) {
       }
 
       /** Argument cannot have error flag */
-      iotjs_uncaught_exception(jerry_get_value_from_error(jval_err, false));
+      jerry_value_t jval_of_err = jerry_get_value_from_error(jval_err, false);
+      iotjs_uncaught_exception(jval_of_err);
+      jerry_release_value(jval_of_err);
       jerry_release_value(jval_err);
     }
   }

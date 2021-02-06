@@ -129,9 +129,23 @@ inline void TRY_CATCH_CALL(
     if ((argc != 0) && (passed_argv != NULL)) {
         args.assign(passed_argv, passed_argv + argc);
     }
-    Napi::details::WrapVoidCallback([&] {
-        callback.MakeCallback(context, args);
-    });
+
+    napi_value result = NULL;
+    napi_status status = napi_make_callback(context.Env(), NULL, context, callback, argc, args.data(), &result);
+    bool is_pending;
+    napi_is_exception_pending(context.Env(), &is_pending);
+    if (status == napi_ok) {
+        return;
+    } if (is_pending) {
+        return;
+    } else {
+        const napi_extended_error_info* error_info;
+        napi_get_last_error_info(context.Env(), &error_info);
+        const char* error_message = error_info->error_message != NULL
+                                      ? error_info->error_message
+                                      : "empty error message";
+        napi_throw_error(context.Env(), NULL, error_message);
+    }
 }
 
 #define WORK_DEFINITION(name)                                                  \
