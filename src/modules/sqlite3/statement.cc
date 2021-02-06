@@ -102,6 +102,8 @@ Statement::Statement(const Napi::CallbackInfo& info) : Napi::ObjectWrap<Statemen
         Napi::TypeError::New(env, "Callback expected").ThrowAsJavaScriptException();
         return;
     }
+    this->finalize_called = false;
+    this->finalized = false;
 
     Database* db = Napi::ObjectWrap<Database>::Unwrap(info[0].As<Napi::Object>());
     Napi::String sql = info[1].As<Napi::String>();
@@ -863,6 +865,11 @@ void Statement::GetRow(Row* row, sqlite3_stmt* stmt) {
 
 Napi::Value Statement::Finalize_(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
+    if (this->finalize_called) {
+        EXCEPTION(Napi::String::New(env, "Statement is already finalized"), SQLITE_MISUSE, exception);
+        return exception;
+    }
+    this->finalize_called = true;
     Statement* stmt = this;
     OPTIONAL_ARGUMENT_FUNCTION(0, callback);
 

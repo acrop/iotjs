@@ -238,6 +238,7 @@ protected:
 
     bool prepared;
     bool locked;
+    bool finalize_called;
     bool finalized;
     std::queue<Call*> queue;
 };
