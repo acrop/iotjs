@@ -1,10 +1,11 @@
-var sqlite3 = require('..'),
-    fs = require('fs'),
-    assert = require('assert'),
-    Buffer = require('buffer').Buffer;
+var sqlite3 = require('sqlite3');
+var fs = require('fs');
+var assert = require('assert');
+var Buffer = require('buffer').Buffer;
+require('jest');
 
 // lots of elmo
-var elmo = fs.readFileSync(__dirname + '/support/elmo.png');
+var elmo = fs.readFileSync('test/support/elmo.png');
 
 describe('blob', function() {
     var db;

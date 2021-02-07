@@ -3,3 +3,4 @@
 /src/js/ble*
 /test/test-server
 /src/js/sqlite3.js
+/test/jest/sqlite3/**

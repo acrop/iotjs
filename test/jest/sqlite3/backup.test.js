@@ -1,6 +1,7 @@
 var sqlite3 = require('sqlite3');
 var assert = require('assert');
 var helper = require('./support/helper');
+require('jest');
 
 // Check that the number of rows in two tables matches.
 function assertRowsMatchDb(db1, table1, db2, table2, done) {

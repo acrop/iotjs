@@ -5,6 +5,16 @@
       "required-modules": [
         "jest"
       ]
+    },
+    {
+      "name": "sqlite3/affected.test.js",
+      "required-modules": [
+        "jest",
+        "sqlite3"
+      ],
+      "required-features": [
+        "Symbol"
+      ]
     }
   ],
   "run_pass": [
