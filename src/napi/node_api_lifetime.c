@@ -290,12 +290,12 @@ napi_status napi_remove_env_cleanup_hook(napi_env env, void (*fun)(void* arg),
   NAPI_RETURN(napi_ok);
 }
 
-void iotjs_setup_napi() {
+void iotjs_setup_napi(void) {
   iotjs_napi_env_t* env = (iotjs_napi_env_t*)iotjs_get_current_napi_env();
   env->main_thread = uv_thread_self();
 }
 
-void iotjs_cleanup_napi() {
+void iotjs_cleanup_napi(void) {
   iotjs_napi_env_t* env = (iotjs_napi_env_t*)iotjs_get_current_napi_env();
   iotjs_cleanup_hook_t* hook = env->cleanup_hook;
   while (hook != NULL) {
