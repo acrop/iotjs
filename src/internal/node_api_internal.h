@@ -25,7 +25,13 @@
 
 #define GET_4TH_ARG(arg1, arg2, arg3, arg4, ...) arg4
 
-#define AS_JERRY_VALUE(nvalue) (jerry_value_t)(uintptr_t) nvalue
+static inline jerry_value_t AS_JERRY_VALUE(napi_value nvalue) {
+  jerry_value_t jval = (jerry_value_t)(uintptr_t)nvalue;
+  if ((jval & 0x7) == 0) {
+    jval ^= 1 << 3;
+  }
+  return jval;
+}
 
 static inline jerry_value_t AS_JERRY_OBJECT(napi_value nvalue) {
   jerry_value_t val = AS_JERRY_VALUE(nvalue);
@@ -37,7 +43,12 @@ static inline jerry_value_t AS_JERRY_OBJECT(napi_value nvalue) {
   return val;
 }
 
-#define AS_NAPI_VALUE(jval) (napi_value)(uintptr_t) jval
+static inline napi_value AS_NAPI_VALUE(jerry_value_t jval) {
+  if ((jval & 0x7) == 0) {
+    jval ^= 1 << 3;
+  }
+  return (napi_value)(uintptr_t)jval;
+}
 
 /**
  * MARK: - N-API Returns machenism:
@@ -152,8 +163,8 @@ void iotjs_napi_set_error_info(napi_env env, napi_status error_code,
 void iotjs_napi_clear_error_info(napi_env env);
 
 bool iotjs_napi_is_exception_pending(napi_env env);
-jerry_value_t iotjs_napi_env_get_and_clear_exception(napi_env env);
-jerry_value_t iotjs_napi_env_get_and_clear_fatal_exception(napi_env env);
+napi_value iotjs_napi_env_get_and_clear_exception(napi_env env);
+napi_value iotjs_napi_env_get_and_clear_fatal_exception(napi_env env);
 /** MARK: - END node_api_env.c */
 
 /** MARK: - node_api_lifetime.c */

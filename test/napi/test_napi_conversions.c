@@ -21,10 +21,12 @@ static napi_value AsInt32(napi_env env, napi_callback_info info) {
   NAPI_CALL(env, napi_get_cb_info(env, info, &argc, args, NULL, NULL));
 
   int32_t value;
+  NAPI_ASSERT(env, args[0] != NULL, "Number can not be NULL");
   NAPI_CALL(env, napi_get_value_int32(env, args[0], &value));
 
   napi_value output;
   NAPI_CALL(env, napi_create_int32(env, value, &output));
+  NAPI_ASSERT(env, output != NULL, "Number can not be NULL");
 
   return output;
 }
@@ -35,10 +37,12 @@ static napi_value AsUInt32(napi_env env, napi_callback_info info) {
   NAPI_CALL(env, napi_get_cb_info(env, info, &argc, args, NULL, NULL));
 
   uint32_t value;
+  NAPI_ASSERT(env, args[0] != NULL, "Number can not be NULL");
   NAPI_CALL(env, napi_get_value_uint32(env, args[0], &value));
 
   napi_value output;
   NAPI_CALL(env, napi_create_uint32(env, value, &output));
+  NAPI_ASSERT(env, output != NULL, "Number can not be NULL");
 
   return output;
 }

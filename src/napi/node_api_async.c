@@ -52,13 +52,14 @@ static void iotjs_uv_work_after_cb(uv_work_t* req, int status) {
     jerryx_close_handle_scope(scope);
 
     if (iotjs_napi_is_exception_pending(env)) {
-      jerry_value_t jval_err;
-      jval_err = iotjs_napi_env_get_and_clear_exception(env);
-      if (jval_err == (uintptr_t)NULL) {
-        jval_err = iotjs_napi_env_get_and_clear_fatal_exception(env);
+      napi_value napi_err;
+      napi_err = iotjs_napi_env_get_and_clear_exception(env);
+      if (napi_err == NULL) {
+        napi_err = iotjs_napi_env_get_and_clear_fatal_exception(env);
       }
 
       /** Argument cannot have error flag */
+      jerry_value_t jval_err = AS_JERRY_VALUE(napi_err);
       jerry_value_t jval_of_err = jerry_get_value_from_error(jval_err, false);
       iotjs_uncaught_exception(jval_of_err);
       jerry_release_value(jval_of_err);

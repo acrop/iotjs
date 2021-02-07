@@ -50,33 +50,27 @@ static jerry_value_t iotjs_napi_function_handler(
 
   jerry_value_t jval_ret;
   if (iotjs_napi_is_exception_pending(env)) {
-    jerry_value_t jval_err = iotjs_napi_env_get_and_clear_exception(env);
-    if (jval_err != (uintptr_t)NULL) {
-      jval_ret = jval_err;
-    } else {
-      jval_err = iotjs_napi_env_get_and_clear_fatal_exception(env);
-      IOTJS_ASSERT(jval_err != (uintptr_t)NULL);
-
-      jval_ret = jval_err;
+    napi_value napi_err = iotjs_napi_env_get_and_clear_exception(env);
+    if (napi_err == NULL) {
+      napi_err = iotjs_napi_env_get_and_clear_fatal_exception(env);
+      IOTJS_ASSERT(napi_err != NULL);
     }
-
+    jval_ret = AS_JERRY_VALUE(napi_err);
     goto cleanup;
   }
 
-  // TODO: check if nvalue_ret is escaped
-  /**
-   * Do not turn NULL pointer into undefined since number value `0` in
-   * jerryscript also represented by NULL
-   */
-  jval_ret = AS_JERRY_VALUE(nvalue_ret);
   /**
    * - for N-API created value: value is scoped, would be released on :cleanup
    * - for passed-in params: value would be automatically release on end of
    * invocation
    * - for error values: error values has been acquired on thrown
    */
-  jval_ret = jerry_acquire_value(jval_ret);
-
+  // TODO: check if nvalue_ret is escaped
+  if (nvalue_ret == NULL) {
+    jval_ret = jerry_create_undefined();
+  } else {
+    jval_ret = jerry_acquire_value(AS_JERRY_VALUE(nvalue_ret));
+  }
 cleanup:
   jerryx_close_handle_scope(scope);
   /**
@@ -124,7 +118,8 @@ napi_status napi_call_function(napi_env env, napi_value recv, napi_value func,
   IOTJS_RELEASE(jval_argv);
 
   if (jerry_value_is_error(jval_ret)) {
-    NAPI_INTERNAL_CALL(napi_throw(env, AS_NAPI_VALUE(jval_ret)));
+    NAPI_INTERNAL_CALL(
+        napi_throw(env, AS_NAPI_VALUE(jerry_acquire_value(jval_ret))));
     NAPI_RETURN_WITH_MSG(napi_pending_exception,
                          "Unexpected error flag on jerry_call_function.");
   }
@@ -196,7 +191,8 @@ napi_status napi_new_instance(napi_env env, napi_value constructor, size_t argc,
   IOTJS_RELEASE(jval_argv);
 
   if (jerry_value_is_error(jval_ret)) {
-    NAPI_INTERNAL_CALL(napi_throw(env, AS_NAPI_VALUE(jval_ret)));
+    NAPI_INTERNAL_CALL(
+        napi_throw(env, AS_NAPI_VALUE(jerry_acquire_value(jval_ret))));
     NAPI_RETURN_WITH_MSG(napi_pending_exception,
                          "Unexpected error flag on jerry_construct_object.");
   }

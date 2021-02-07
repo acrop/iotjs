@@ -84,22 +84,22 @@ void iotjs_napi_clear_error_info(napi_env env) {
   cur_env->extended_error_info.engine_reserved = NULL;
 }
 
-jerry_value_t iotjs_napi_env_get_and_clear_exception(napi_env env) {
+napi_value iotjs_napi_env_get_and_clear_exception(napi_env env) {
   iotjs_napi_env_t* cur_env = (iotjs_napi_env_t*)env;
 
-  jerry_value_t jval_ret = AS_JERRY_VALUE(cur_env->pending_exception);
+  napi_value exception = cur_env->pending_exception;
   cur_env->pending_exception = NULL;
 
-  return jval_ret;
+  return exception;
 }
 
-jerry_value_t iotjs_napi_env_get_and_clear_fatal_exception(napi_env env) {
+napi_value iotjs_napi_env_get_and_clear_fatal_exception(napi_env env) {
   iotjs_napi_env_t* cur_env = (iotjs_napi_env_t*)env;
 
-  jerry_value_t jval_ret = AS_JERRY_VALUE(cur_env->pending_fatal_exception);
+  napi_value exception = cur_env->pending_fatal_exception;
   cur_env->pending_fatal_exception = NULL;
 
-  return jval_ret;
+  return exception;
 }
 
 // Methods to support error handling
@@ -108,19 +108,20 @@ napi_status napi_throw(napi_env env, napi_value error) {
   iotjs_napi_env_t* curr_env = (iotjs_napi_env_t*)env;
   NAPI_TRY_NO_PENDING_EXCEPTION(env);
 
-  jerry_value_t jval_err = AS_JERRY_VALUE(error);
-  /**
-   * `jerry_value_set_error_flag` creates a new error reference and its
-   * reference count is separated from its original value, so we have to
-   * acquire the original value before `jerry_value_set_error_flag`
-   */
-  jval_err = jerry_acquire_value(jval_err);
+  if (error != NULL) {
+    jerry_value_t jval_err = AS_JERRY_VALUE(error);
+    /**
+     * `jerry_create_error_from_value` creates a new error reference and its
+     * reference count is separated from its original value, so we have to
+     * acquire the original value before `jerry_create_error_from_value`
+     */
+    if (!jerry_value_is_error(jval_err)) {
+      jval_err =
+          jerry_create_error_from_value(jerry_acquire_value(jval_err), true);
+    }
 
-  if (!jerry_value_is_error(jval_err)) {
-    jval_err = jerry_create_error_from_value(jval_err, true);
+    curr_env->pending_exception = AS_NAPI_VALUE(jval_err);
   }
-
-  curr_env->pending_exception = AS_NAPI_VALUE(jval_err);
   /** should not clear last error info */
   return napi_ok;
 }
@@ -139,7 +140,7 @@ static napi_status napi_throw_helper(jerry_error_t jerry_error_type,
     jval_error = jerry_create_error_from_value(jval_error, true);
   }
   jerryx_create_handle(jval_error);
-  return napi_throw(env, AS_NAPI_VALUE(jval_error));
+  return napi_throw(env, AS_NAPI_VALUE(jerry_acquire_value(jval_error)));
 }
 
 #define DEF_NAPI_THROWS(type, jerry_error_type)                 \
@@ -159,19 +160,20 @@ napi_status napi_fatal_exception(napi_env env, napi_value err) {
   NAPI_TRY_NO_PENDING_EXCEPTION(env);
   iotjs_napi_env_t* curr_env = (iotjs_napi_env_t*)env;
 
-  jerry_value_t jval_err = AS_JERRY_VALUE(err);
-  /**
-   * `jerry_value_set_error_flag` creates a new error reference and its
-   * reference count is separated from its original value, so we have to
-   * acquire the original value before `jerry_value_set_error_flag`
-   */
-  jval_err = jerry_acquire_value(jval_err);
+  if (err != NULL) {
+    jerry_value_t jval_err = AS_JERRY_VALUE(err);
+    /**
+     * `jerry_create_abort_from_value` creates a new error reference and its
+     * reference count is separated from its original value, so we have to
+     * acquire the original value before `jerry_create_abort_from_value`
+     */
+    if (!jerry_value_is_error(jval_err)) {
+      jval_err =
+          jerry_create_abort_from_value(jerry_acquire_value(jval_err), true);
+    }
 
-  if (!jerry_value_is_abort(jval_err)) {
-    jval_err = jerry_create_abort_from_value(jval_err, true);
+    curr_env->pending_fatal_exception = AS_NAPI_VALUE(jval_err);
   }
-
-  curr_env->pending_fatal_exception = AS_NAPI_VALUE(jval_err);
   /** should not clear last error info */
   return napi_ok;
 }
@@ -197,13 +199,10 @@ napi_status napi_get_and_clear_last_exception(napi_env env,
     error = curr_env->pending_fatal_exception;
     curr_env->pending_fatal_exception = NULL;
   } else {
-    error = AS_NAPI_VALUE(jerry_create_undefined());
+    error = NULL;
   }
 
-  jerry_value_t jval_err =
-      jerry_get_value_from_error(AS_JERRY_VALUE(error), true);
-
-  NAPI_ASSIGN(result, AS_NAPI_VALUE(jval_err));
+  NAPI_ASSIGN(result, error);
   /** should not clear last error info */
   return napi_ok;
 }

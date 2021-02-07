@@ -283,7 +283,6 @@ static napi_status napi_create_error_helper(jerry_error_t jerry_error_type,
                                             napi_value* result) {
   NAPI_TRY_ENV(env);
 
-  jerry_value_t jval_code = AS_JERRY_VALUE(code);
   jerry_value_t jval_msg = AS_JERRY_VALUE(msg);
 
   NAPI_TRY_TYPE(string, jval_msg);
@@ -300,14 +299,15 @@ static napi_status napi_create_error_helper(jerry_error_t jerry_error_type,
   IOTJS_RELEASE(raw_msg);
 
   /** code has to be an JS string type, thus it can not be an number 0 */
+  jval_error = jerry_get_value_from_error(jval_error, true);
   if (code != NULL) {
+    jerry_value_t jval_code = AS_JERRY_VALUE(code);
     NAPI_TRY_TYPE(string, jval_code);
-    jval_error = jerry_get_value_from_error(jval_error, true);
     iotjs_jval_set_property_jval(jval_error, IOTJS_MAGIC_STRING_CODE,
                                  jval_code);
   }
 
-  jerryx_create_handle(jval_error);
+  jerry_release_value(jval_error);
   NAPI_ASSIGN(result, AS_NAPI_VALUE(jval_error));
 
   NAPI_RETURN(napi_ok);
@@ -383,6 +383,9 @@ napi_status napi_create_symbol(napi_env env, napi_value description,
   if (!jerry_is_feature_enabled(JERRY_FEATURE_SYMBOL)) {
     NAPI_ASSIGN(result, NULL);
     NAPI_RETURN_WITH_MSG(napi_generic_failure, napi_err_no_symbol);
+  }
+  if (description == NULL) {
+    description = AS_NAPI_VALUE(jerry_create_string((const jerry_char_t*)""));
   }
 
   JERRYX_CREATE(jval, jerry_create_symbol(AS_JERRY_VALUE(description)));
@@ -805,7 +808,8 @@ napi_status napi_resolve_deferred(napi_env env, napi_deferred deferred,
   jerry_release_value(promise);
   free(deferred);
   if (jerry_value_is_error(res)) {
-    NAPI_INTERNAL_CALL(napi_throw(env, AS_NAPI_VALUE(res)));
+    NAPI_INTERNAL_CALL(
+        napi_throw(env, AS_NAPI_VALUE(jerry_acquire_value(res))));
     NAPI_RETURN(napi_pending_exception);
   }
   NAPI_RETURN(napi_ok);
@@ -829,7 +833,8 @@ napi_status napi_reject_deferred(napi_env env, napi_deferred deferred,
   jerry_release_value(promise);
   free(deferred);
   if (jerry_value_is_error(res)) {
-    NAPI_INTERNAL_CALL(napi_throw(env, AS_NAPI_VALUE(res)));
+    NAPI_INTERNAL_CALL(
+        napi_throw(env, AS_NAPI_VALUE(jerry_acquire_value(res))));
     NAPI_RETURN(napi_pending_exception);
   }
 

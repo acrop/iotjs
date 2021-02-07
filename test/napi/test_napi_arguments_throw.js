@@ -11,3 +11,11 @@ try {
   assert(err != null);
   assert.strictEqual(err.message, 'foo');
 }
+
+try {
+  test.ThrowTwice(new Error('foo'));
+  assert.fail('fail path');
+} catch (err) {
+  assert(err != null);
+  assert.strictEqual(err.message, 'foo');
+}
