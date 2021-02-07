@@ -77,6 +77,14 @@ module.exports = {
   },
   'globals': {
     'native': true,
+    'globalThis': true,
+    'describe': true,
+    'test': true,
+    'it': true,
+    'beforeAll': true,
+    'afterAll': true,
+    'beforeEach': true,
+    'afterEach': true,
   },
   'rules': Object.assign(
     eslintRecommended,

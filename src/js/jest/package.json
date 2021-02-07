@@ -1,0 +1,7 @@
+{
+  "name": "jest",
+  "description": "Tiny Jest",
+  "author": "Yonggang Luo <luoyonggang@gmail.com>",
+  "license": "Apache-2.0",
+  "main": "jest.js"
+}

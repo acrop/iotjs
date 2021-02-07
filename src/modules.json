@@ -1,7 +1,7 @@
 {
   "modules": {
     "iotjs_basic_modules": {
-      "require": ["assert", "dns", "http", "net", "stream"]
+      "require": ["assert", "dns", "http", "net", "stream", "jest"]
     },
     "iotjs_core_modules": {
       "require": ["buffer", "console", "events", "fs", "module", "process",
@@ -231,6 +231,9 @@
                        "modules/iotjs_module_periph_common.c"],
       "init": "iotjs_init_i2c",
       "js_file": "js/i2c.js"
+    },
+    "jest": {
+      "js_file": "js/jest/jest.js"
     },
     "module": {
       "js_file": "js/module.js",

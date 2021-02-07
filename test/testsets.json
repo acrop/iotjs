@@ -1,4 +1,12 @@
 {
+  "jest": [
+    {
+      "name": "basic.js",
+      "required-modules": [
+        "jest"
+      ]
+    }
+  ],
   "run_pass": [
     {
       "name": "test_adc.js",

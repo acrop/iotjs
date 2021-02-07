@@ -8,9 +8,11 @@
   "author": "Samsung Electronics Co., Ltd.",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@types/jest": "^26.0.20",
     "eslint": "^4.7.2"
   },
   "dependencies": {
+    "jest": "file:src/js/jest",
     "node-gyp": "^7.1.2"
   }
 }
