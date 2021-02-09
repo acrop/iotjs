@@ -9,7 +9,7 @@ process.on("uncaughtException", function (e) {
   assert(e.message === ERROR_MSG);
 });
 
-assert(addon.GetandClearLastException() === undefined);
+assert(addon.GetAndClearLastException() === undefined);
 
 var err = new Error(ERROR_MSG);
 

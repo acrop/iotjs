@@ -110,7 +110,7 @@ napi_value CreateRangeError(napi_env env, napi_callback_info info) {
   return result;
 }
 
-napi_value GetandClearLastException(napi_env env, napi_callback_info info) {
+napi_value GetAndClearLastException(napi_env env, napi_callback_info info) {
   napi_status status;
   napi_value result;
 
@@ -158,8 +158,8 @@ napi_value Init(napi_env env, napi_value exports) {
   SET_NAMED_METHOD(env, exports, "CreateError", CreateError);
   SET_NAMED_METHOD(env, exports, "CreateTypeError", CreateTypeError);
   SET_NAMED_METHOD(env, exports, "CreateRangeError", CreateRangeError);
-  SET_NAMED_METHOD(env, exports, "GetandClearLastException",
-                   GetandClearLastException);
+  SET_NAMED_METHOD(env, exports, "GetAndClearLastException",
+                   GetAndClearLastException);
   SET_NAMED_METHOD(env, exports, "IsExceptionPending", IsExceptionPending);
   SET_NAMED_METHOD(env, exports, "FatalException", FatalException);
 
