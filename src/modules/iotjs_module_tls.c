@@ -382,17 +382,16 @@ static void iotjs_tls_send_pending(iotjs_tls_t *tls_data) {
     return;
   }
 
-  jerry_value_t jbuffer = iotjs_bufferwrap_create_buffer(pending);
-  iotjs_bufferwrap_t *buffer_wrap = iotjs_bufferwrap_from_jbuffer(jbuffer);
-  iotjs_bio_read(send_bio, buffer_wrap->buffer, pending);
+  jerry_value_t buffer_wrap = iotjs_bufferwrap_create_buffer(pending);
+  iotjs_bio_read(send_bio, iotjs_bufferwrap_data(buffer_wrap), pending);
 
   jerry_value_t jthis = tls_data->jobject;
   jerry_value_t fn = iotjs_jval_get_property(jthis, IOTJS_MAGIC_STRING_ONWRITE);
 
-  iotjs_invoke_callback(fn, jthis, &jbuffer, 1);
+  iotjs_invoke_callback(fn, jthis, &buffer_wrap, 1);
 
   jerry_release_value(fn);
-  jerry_release_value(jbuffer);
+  jerry_release_value(buffer_wrap);
 }
 
 
@@ -426,10 +425,8 @@ JS_FUNCTION(tls_write) {
 
   if (jargc >= 1 && jerry_value_to_boolean(jargv[0])) {
     jerry_value_t jbuffer = JS_GET_ARG(0, object);
-
-    iotjs_bufferwrap_t *buf = iotjs_bufferwrap_from_jbuffer(jbuffer);
-    data = (const unsigned char *)buf->buffer;
-    length = iotjs_bufferwrap_length(buf);
+    data = (const unsigned char *)iotjs_bufferwrap_data(jbuffer);
+    length = iotjs_bufferwrap_length(jbuffer);
   }
 
   if (jargc >= 2 && jerry_value_to_boolean(jargv[1])) {
@@ -477,8 +474,7 @@ JS_FUNCTION(tls_write) {
   size_t pending = iotjs_bio_pending(send_bio);
 
   jerry_value_t jbuffer = iotjs_bufferwrap_create_buffer(pending);
-  iotjs_bufferwrap_t *buf = iotjs_bufferwrap_from_jbuffer(jbuffer);
-  iotjs_bio_read(send_bio, buf->buffer, pending);
+  iotjs_bio_read(send_bio, iotjs_bufferwrap_data(jbuffer), pending);
 
   return jbuffer;
 }
@@ -538,9 +534,8 @@ JS_FUNCTION(tls_read) {
   if (jargc >= 1 && jerry_value_to_boolean(jargv[0])) {
     jerry_value_t jbuffer = JS_GET_ARG(0, object);
 
-    iotjs_bufferwrap_t *buf = iotjs_bufferwrap_from_jbuffer(jbuffer);
-    data = buf->buffer;
-    length = iotjs_bufferwrap_length(buf);
+    data = iotjs_bufferwrap_data(jbuffer);
+    length = iotjs_bufferwrap_length(jbuffer);
   }
 
   do {
@@ -584,9 +579,8 @@ JS_FUNCTION(tls_read) {
         }
 
         jerry_value_t jbuffer = iotjs_bufferwrap_create_buffer(pending);
-        iotjs_bufferwrap_t *buf = iotjs_bufferwrap_from_jbuffer(jbuffer);
-        ret_val = mbedtls_ssl_read(&tls_data->ssl, (unsigned char *)buf->buffer,
-                                   pending);
+        ret_val = mbedtls_ssl_read(&tls_data->ssl,
+                                   iotjs_bufferwrap_data(jbuffer), pending);
 
         IOTJS_ASSERT(ret_val == (int)pending);
         IOTJS_UNUSED(ret_val);

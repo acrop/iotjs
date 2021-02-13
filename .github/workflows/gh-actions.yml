@@ -11,12 +11,14 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: OPTS="linux" $RUNNER --target-arch=x86_64 --profile=profiles/minimal.profile
+            --jerry-profile=es.next
 
   "Mock_Linux_Build_and_Correctness_Tests":
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - run: OPTS="linux-mock" $RUNNER
+            --jerry-profile=es.next
 
   "Linux-x86-64_Build_and_Correctness_Tests":
     runs-on: ubuntu-latest
@@ -25,6 +27,7 @@ jobs:
       - run: OPTS="linux" $RUNNER --target-arch=x86_64 --profile=test/profiles/host-linux-napi.profile
             --jerry-heaplimit=10240
             --no-check-valgrind
+            --jerry-profile=es.next
 
   "Linux-i686_Build_and_Correctness_Tests":
     runs-on: ubuntu-latest
@@ -33,6 +36,7 @@ jobs:
       - run: OPTS="linux" $RUNNER --target-arch=i686 --profile=test/profiles/host-linux-napi.profile
             --jerry-cmake-param=-DJERRY_SYSTEM_ALLOCATOR=ON
             --no-check-valgrind
+            --jerry-profile=es.next
 
   "Linux-x86-64_Build_and_Correctness_Tests_Valgrind":
     runs-on: ubuntu-latest
@@ -41,6 +45,7 @@ jobs:
       - run: OPTS="linux" $RUNNER --target-arch=x86_64 --profile=test/profiles/host-linux-napi.profile
             --jerry-heaplimit=10240
             --buildtype=release
+            --jerry-profile=es.next
 
   "Linux-x86-64_Build_and_Correctness_Tests_Valgrind_Debug":
     runs-on: ubuntu-latest
@@ -49,6 +54,7 @@ jobs:
       - run: OPTS="linux" $RUNNER --target-arch=x86_64 --profile=test/profiles/host-linux-napi.profile
             --jerry-heaplimit=10240
             --buildtype=debug
+            --jerry-profile=es.next
 
   "Linux-i686_Build_and_Correctness_Tests_Valgrind":
     runs-on: ubuntu-latest
@@ -57,6 +63,7 @@ jobs:
       - run: OPTS="linux" $RUNNER --target-arch=i686 --profile=test/profiles/host-linux-napi.profile
             --jerry-cmake-param=-DJERRY_SYSTEM_ALLOCATOR=ON
             --buildtype=release
+            --jerry-profile=es.next
 
   "Linux-i686_Build_and_Correctness_Tests_Valgrind_Debug":
     runs-on: ubuntu-latest
@@ -65,18 +72,14 @@ jobs:
       - run: OPTS="linux" $RUNNER --target-arch=i686 --profile=test/profiles/host-linux-napi.profile
             --jerry-cmake-param=-DJERRY_SYSTEM_ALLOCATOR=ON
             --buildtype=debug
+            --jerry-profile=es.next
 
   "Raspberry_Pi_2_Build_Test":
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - run: OPTS="rpi2" $RUNNER
-
-  "STM32f4_Discovery_with_Nuttx_Build_Test":
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - run: OPTS="stm32f4dis" $RUNNER
+            --jerry-profile=es.next
 
   "Tizen_Build_Test":
     runs-on: ubuntu-latest
@@ -92,12 +95,13 @@ jobs:
             --external-modules=test/external_modules/mymodule1,test/external_modules/mymodule2
             --cmake-param=-DENABLE_MODULE_MYMODULE1=ON
             --cmake-param=-DENABLE_MODULE_MYMODULE2=ON
+            --jerry-profile=es.next
 
   "Linux-x86-64_without_snapshot_Build_and_Correctness_Tests":
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - run: OPTS="linux-no-snapshot" $RUNNER
+      - run: OPTS="linux-no-snapshot" $RUNNER --jerry-profile=es.next
 
   "Misc_checks_style_checker":
     runs-on: ubuntu-18.04
@@ -106,13 +110,14 @@ jobs:
       - run: sudo apt update
       - run: sudo apt install -y npm clang-format-3.9
       - run: npm install eslint
-      - run: OPTS="misc" $RUNNER
+      - run: OPTS="misc" $RUNNER --jerry-profile=es.next
 
   "OSX-x86-64_Build_and_Correctness_Tests":
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
       - run: OPTS="host-darwin" $RUNNER
+            --jerry-profile=es.next
 
   "ASAN_Tests":
     runs-on: ubuntu-latest
@@ -120,6 +125,7 @@ jobs:
       - uses: actions/checkout@v2
       - run: OPTS="linux-asan" $RUNNER --target-arch=i686 --buildtype=debug
             --profile=test/profiles/host-linux-napi.profile
+            --jerry-profile=es.next
             --jerry-cmake-param=-DJERRY_SYSTEM_ALLOCATOR=ON --compile-flag=-O2
 
   "UBSAN_Tests":
@@ -128,6 +134,7 @@ jobs:
       - uses: actions/checkout@v2
       - run: OPTS="linux-ubsan" $RUNNER --target-arch=i686 --buildtype=debug
             --profile=test/profiles/host-linux-napi.profile
+            --jerry-profile=es.next
             --jerry-cmake-param=-DJERRY_SYSTEM_ALLOCATOR=ON
 
   "Windows-x86_64":
@@ -171,5 +178,5 @@ jobs:
             --target-arch=i686
             --run-test=full
             --jerry-cmake-param=-DJERRY_SYSTEM_ALLOCATOR=ON
-            --jerry-profile=es5.1
+            --jerry-profile=es.next
             --profile=test/profiles/host-windows.profile

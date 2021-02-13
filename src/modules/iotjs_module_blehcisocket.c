@@ -128,10 +128,9 @@ JS_FUNCTION(set_filter) {
   JS_DECLARE_THIS_PTR(blehcisocket, blehcisocket);
   DJS_CHECK_ARGS(1, object);
 
-  iotjs_bufferwrap_t* buffer =
-      iotjs_bufferwrap_from_jbuffer(JS_GET_ARG(0, object));
+  jerry_value_t buffer = JS_GET_ARG(0, object);
 
-  iotjs_blehcisocket_setFilter(blehcisocket, buffer->buffer,
+  iotjs_blehcisocket_setFilter(blehcisocket, iotjs_bufferwrap_data(buffer),
                                iotjs_bufferwrap_length(buffer));
 
   return jerry_create_undefined();
@@ -151,10 +150,9 @@ JS_FUNCTION(write) {
   JS_DECLARE_THIS_PTR(blehcisocket, blehcisocket);
   DJS_CHECK_ARGS(1, object);
 
-  iotjs_bufferwrap_t* buffer =
-      iotjs_bufferwrap_from_jbuffer(JS_GET_ARG(0, object));
+  jerry_value_t buffer = JS_GET_ARG(0, object);
 
-  iotjs_blehcisocket_write(blehcisocket, buffer->buffer,
+  iotjs_blehcisocket_write(blehcisocket, iotjs_bufferwrap_data(buffer),
                            iotjs_bufferwrap_length(buffer));
 
   return jerry_create_undefined();

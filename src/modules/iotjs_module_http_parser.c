@@ -393,13 +393,12 @@ JS_FUNCTION(js_func_execute) {
   JS_DECLARE_THIS_PTR(http_parserwrap, parser);
   DJS_CHECK_ARGS(1, object);
 
-  jerry_value_t jbuffer = JS_GET_ARG(0, object);
-  iotjs_bufferwrap_t* buffer_wrap = iotjs_bufferwrap_from_jbuffer(jbuffer);
-  char* buf_data = buffer_wrap->buffer;
+  jerry_value_t buffer_wrap = JS_GET_ARG(0, object);
+  char* buf_data = iotjs_bufferwrap_data(buffer_wrap);
   size_t buf_len = iotjs_bufferwrap_length(buffer_wrap);
   DJS_CHECK(buf_data != NULL && buf_len > 0);
 
-  iotjs_http_parserwrap_set_buf(parser, jbuffer, buf_data, buf_len);
+  iotjs_http_parserwrap_set_buf(parser, buffer_wrap, buf_data, buf_len);
 
   http_parser* nativeparser = &parser->parser;
   size_t nparsed =

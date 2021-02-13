@@ -216,14 +216,13 @@ jerry_value_t fs_do_read_or_write(const jerry_value_t jfunc,
   const iotjs_environment_t* env = iotjs_environment_get();
 
   int fd = JS_GET_ARG(0, number);
-  const jerry_value_t jbuffer = JS_GET_ARG(1, object);
+  const jerry_value_t buffer_wrap = JS_GET_ARG(1, object);
   size_t offset = JS_GET_ARG(2, number);
   size_t length = JS_GET_ARG(3, number);
   int position = JS_GET_ARG(4, number);
   const jerry_value_t jcallback = JS_GET_ARG_IF_EXIST(5, function);
 
-  iotjs_bufferwrap_t* buffer_wrap = iotjs_bufferwrap_from_jbuffer(jbuffer);
-  char* data = buffer_wrap->buffer;
+  char* data = iotjs_bufferwrap_data(buffer_wrap);
   size_t data_length = iotjs_bufferwrap_length(buffer_wrap);
   DJS_CHECK(data != NULL && data_length > 0);
 

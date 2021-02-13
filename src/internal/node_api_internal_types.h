@@ -25,7 +25,6 @@ typedef void (*iotjs_cleanup_hook_fn)(void* arg);
 
 typedef struct iotjs_async_context_s iotjs_async_context_t;
 typedef struct iotjs_async_work_s iotjs_async_work_t;
-typedef struct iotjs_buffer_external_info_s iotjs_buffer_external_info_t;
 typedef struct iotjs_callback_info_s iotjs_callback_info_t;
 typedef struct iotjs_cleanup_hook_s iotjs_cleanup_hook_t;
 typedef struct iotjs_function_info_s iotjs_function_info_t;
@@ -44,13 +43,6 @@ struct iotjs_cleanup_hook_s {
   iotjs_cleanup_hook_fn fn;
   void* arg;
   iotjs_cleanup_hook_t* next;
-};
-
-struct iotjs_buffer_external_info_s {
-  napi_env env;
-  void* external_data;
-  void* finalize_hint;
-  napi_finalize finalize_cb;
 };
 
 struct iotjs_reference_s {

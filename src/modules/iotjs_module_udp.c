@@ -118,7 +118,7 @@ static void on_recv(uv_udp_t* handle, ssize_t nread, const uv_buf_t* buf,
   }
 
   jargs[2] = iotjs_bufferwrap_create_buffer((size_t)nread);
-  iotjs_bufferwrap_t* buffer_wrap = iotjs_bufferwrap_from_jbuffer(jargs[2]);
+  jerry_value_t buffer_wrap = jargs[2];
   iotjs_bufferwrap_copy(buffer_wrap, buf->base, (size_t)nread);
   address_to_js(jargs[3], addr);
 
@@ -189,13 +189,12 @@ JS_FUNCTION(udp_send) {
     return JS_CREATE_ERROR(TYPE, "Invalid callback given");
   }
 
-  const jerry_value_t jbuffer = JS_GET_ARG(0, object);
+  const jerry_value_t buffer_wrap = JS_GET_ARG(0, object);
   const unsigned short port = JS_GET_ARG(1, number);
   iotjs_string_t address = JS_GET_ARG(2, string);
   jerry_value_t jcallback = JS_GET_ARG(3, object);
 
-  iotjs_bufferwrap_t* buffer_wrap = iotjs_jbuffer_get_bufferwrap_ptr(jbuffer);
-  if (buffer_wrap == NULL) {
+  if (!jerry_value_is_typedarray(buffer_wrap)) {
     return JS_CREATE_ERROR(TYPE, "Invalid buffer given");
   }
 
@@ -206,7 +205,7 @@ JS_FUNCTION(udp_send) {
   *((size_t*)IOTJS_UV_REQUEST_EXTRA_DATA(req_send)) = len;
 
   uv_buf_t buf;
-  buf.base = buffer_wrap->buffer;
+  buf.base = iotjs_bufferwrap_data(buffer_wrap);
   buf.len = len;
 
   char addr[sizeof(sockaddr_in6)];

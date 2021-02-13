@@ -283,16 +283,15 @@ void iotjs_blehcisocket_poll(iotjs_blehcisocket_t* blehcisocket) {
 
     jerry_value_t str = jerry_create_string((const jerry_char_t*)"data");
     IOTJS_ASSERT(length >= 0);
-    jerry_value_t jbuf = iotjs_bufferwrap_create_buffer((size_t)length);
-    iotjs_bufferwrap_t* buf_wrap = iotjs_bufferwrap_from_jbuffer(jbuf);
+    jerry_value_t buf_wrap = iotjs_bufferwrap_create_buffer((size_t)length);
     iotjs_bufferwrap_copy(buf_wrap, data, (size_t)length);
-    jerry_value_t jargs[2] = { str, jbuf };
+    jerry_value_t jargs[2] = { str, buf_wrap };
     jerry_value_t jres = jerry_call_function(jemit, jhcisocket, jargs, 2);
     IOTJS_ASSERT(!jerry_value_is_error(jres));
 
     jerry_release_value(jres);
     jerry_release_value(str);
-    jerry_release_value(jbuf);
+    jerry_release_value(buf_wrap);
     jerry_release_value(jemit);
   }
 }

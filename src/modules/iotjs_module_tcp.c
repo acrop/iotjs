@@ -224,13 +224,11 @@ JS_FUNCTION(tcp_write) {
   JS_DECLARE_PTR(jthis, uv_stream_t, tcp_handle);
   DJS_CHECK_ARGS(2, object, function);
 
-  const jerry_value_t jbuffer = JS_GET_ARG(0, object);
-  iotjs_bufferwrap_t* buffer_wrap = iotjs_bufferwrap_from_jbuffer(jbuffer);
-  size_t len = iotjs_bufferwrap_length(buffer_wrap);
+  const jerry_value_t buffer_wrap = JS_GET_ARG(0, object);
 
   uv_buf_t buf;
-  buf.base = buffer_wrap->buffer;
-  buf.len = len;
+  buf.base = iotjs_bufferwrap_data(buffer_wrap);
+  buf.len = iotjs_bufferwrap_length(buffer_wrap);
 
   jerry_value_t arg1 = JS_GET_ARG(1, object);
   uv_req_t* req_write = iotjs_uv_request_create(sizeof(uv_write_t), arg1, 0);
@@ -284,12 +282,9 @@ static void on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf) {
       iotjs_invoke_callback(jonread, jerry_create_undefined(), jargs, argc);
     }
   } else {
-    jerry_value_t jbuffer = iotjs_bufferwrap_create_buffer((size_t)nread);
-    iotjs_bufferwrap_t* buffer_wrap = iotjs_bufferwrap_from_jbuffer(jbuffer);
-
+    jerry_value_t buffer_wrap = iotjs_bufferwrap_create_buffer((size_t)nread);
     iotjs_bufferwrap_copy(buffer_wrap, buf->base, (size_t)nread);
-
-    jargs[argc++] = jbuffer;
+    jargs[argc++] = buffer_wrap;
     iotjs_invoke_callback(jonread, jerry_create_undefined(), jargs, argc);
 
     iotjs_buffer_release(buf->base);

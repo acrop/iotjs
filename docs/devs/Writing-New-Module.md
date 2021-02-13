@@ -253,49 +253,6 @@ Using `JS_GET_ARG(index, type)` macro inside `JS_FUNCTION()` will read JS-side a
 
 However, there are many cases that module should maintain its state. Maintaining the state in JS-side would be simple. But maintaining values in native-side is not an easy problem, because native-side values should follow the lifecycle of JS-side values. Let's take `Buffer` module as an example. `Buffer` should maintain the native buffer content and its length. And the native buffer content should be deallocated when JS-side buffer variable becomes unreachable.
 
-There's `iotjs_jobjectwrap_t` struct for that purpose. if you create a new `iotjs_jobjectwrap_t` struct with JavaScript object as its argument and free handler, the registered free handler will be automatically called when its corresponding JavaScript object becomes unreachable. `Buffer` module also exploits this feature.
-
-```c
-// This wrapper refer javascript object but never increase reference count
-// If the object is freed by GC, then this wrapper instance will be also freed.
-typedef struct {
-  jerry_value_t jobject;
-} iotjs_jobjectwrap_t;
-
-typedef struct {
-  iotjs_jobjectwrap_t jobjectwrap;
-  char* buffer;
-  size_t length;
-} iotjs_bufferwrap_t;
-
-static void iotjs_bufferwrap_destroy(iotjs_bufferwrap_t* bufferwrap);
-IOTJS_DEFINE_NATIVE_HANDLE_INFO(bufferwrap);
-
-iotjs_bufferwrap_t* iotjs_bufferwrap_create(const jerry_value_t* jbuiltin,
-                                            size_t length) {
-  iotjs_bufferwrap_t* bufferwrap = IOTJS_ALLOC(iotjs_bufferwrap_t);
-  iotjs_jobjectwrap_initialize(&_this->jobjectwrap,
-                               jbuiltin,
-                               &bufferwrap_native_info); /* Automatically called */
-  ...
-}
-
-void iotjs_bufferwrap_destroy(iotjs_bufferwrap_t* bufferwrap) {
-  ...
-  iotjs_jobjectwrap_destroy(&_this->jobjectwrap);
-  IOTJS_RELEASE(bufferwrap);
-}
-```
-
-You can use this code like below:
-
-```c
-const jerry_value_t* jbuiltin = /*...*/;
-iotjs_bufferwrap_t* buffer_wrap = iotjs_bufferwrap_create(jbuiltin, length);
-// Now `jbuiltin` object can be used in JS-side,
-// and when it becomes unreachable, `iotjs_bufferwrap_destroy` will be called.
-```
-
 #### Callback
 
 Sometimes native handler should call JavaScript function directly. For general function calls (inside current tick), you can use `iotjs_jhelper_call()` function to call JavaScript function from native-side.

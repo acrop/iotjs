@@ -436,14 +436,11 @@ JS_FUNCTION(sha_encode) {
 
   iotjs_string_destroy(&user_str);
 
-  jerry_value_t ret_val;
-  ret_val = iotjs_bufferwrap_create_buffer(sha_sz);
-  iotjs_bufferwrap_t *ret_wrap = iotjs_bufferwrap_from_jbuffer(ret_val);
-  memcpy(ret_wrap->buffer, sha_ret, sha_sz);
-  ret_wrap->length = sha_sz;
+  jerry_value_t ret_wrap = iotjs_bufferwrap_create_buffer(sha_sz);
+  memcpy(iotjs_bufferwrap_data(ret_wrap), sha_ret, sha_sz);
 
   IOTJS_RELEASE(sha_ret);
-  return ret_val;
+  return ret_wrap;
 }
 
 

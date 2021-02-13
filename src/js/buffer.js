@@ -46,44 +46,40 @@ function getEncodingType(encoding) {
 // [3] new Buffer(string)
 // [4] new Buffer(string, encoding)
 // [5] new Buffer(array)
-function Buffer(subject, encoding) {
-  if (!Buffer.isBuffer(this)) {
-    return new Buffer(subject, encoding);
-  }
+class Buffer extends Uint8Array {
+  constructor(subject, encoding) {
+    var length;
+    if (typeof subject === 'number') {
+      length = subject > 0 ? subject >>> 0 : 0;
+    } else if (typeof subject === 'string') {
+      length = Buffer.byteLength(subject, encoding);
+    } else if (Buffer.isBuffer(subject) || Array.isArray(subject)) {
+      length = subject.length;
+    } else {
+      throw new TypeError('Bad arguments: Buffer(string|number|Buffer|Array)');
+    }
+    super(length);
 
-  if (typeof subject === 'number') {
-    this.length = subject > 0 ? subject >>> 0 : 0;
-  } else if (typeof subject === 'string') {
-    this.length = Buffer.byteLength(subject, encoding);
-  } else if (Buffer.isBuffer(subject) || Array.isArray(subject)) {
-    this.length = subject.length;
-  } else {
-    throw new TypeError('Bad arguments: Buffer(string|number|Buffer|Array)');
-  }
-
-  // 'native' is the buffer object created via the C API.
-  native(this, this.length);
-
-  if (typeof subject === 'string') {
-    if (typeof encoding === 'string') {
-      encoding = getEncodingType(encoding);
-      if (encoding != -1) {
-        native.writeDecode(this, encoding, subject, 0, this.length);
+    if (typeof subject === 'string') {
+      if (typeof encoding === 'string') {
+        encoding = getEncodingType(encoding);
+        if (encoding != -1) {
+          native.writeDecode(this, encoding, subject, 0, this.length);
+        } else {
+          this.write(subject);
+        }
       } else {
         this.write(subject);
       }
-    } else {
-      this.write(subject);
-    }
-  } else if (Buffer.isBuffer(subject)) {
-    subject.copy(this);
-  } else if (Array.isArray(subject)) {
-    for (var i = 0; i < this.length; ++i) {
-      native.writeUInt8(this, subject[i], i);
+    } else if (Buffer.isBuffer(subject)) {
+      subject.copy(this);
+    } else if (Array.isArray(subject)) {
+      for (var i = 0; i < this.length; ++i) {
+        native.writeUInt8(this, subject[i], i);
+      }
     }
   }
 }
-
 
 // Buffer.byteLength(string, encoding)
 Buffer.byteLength = function(str, encoding) {

@@ -102,7 +102,7 @@ static uint16_t iotjs_mqtt_calculate_length(uint8_t msb, uint8_t lsb) {
 
 static uint8_t *iotjs_mqtt_string_serialize(uint8_t *dst_buffer,
                                             iotjs_tmp_buffer_t *src_buffer) {
-  uint16_t len = src_buffer->length;
+  size_t len = src_buffer->length;
   dst_buffer[0] = (uint8_t)(len >> 8);
   dst_buffer[1] = (uint8_t)(len & 0x00FF);
   memcpy(dst_buffer + 2, src_buffer->buffer, src_buffer->length);
@@ -257,10 +257,8 @@ JS_FUNCTION(mqtt_connect) {
                     get_remaining_length_size(remaining_length) +
                     variable_header_len + payload_len;
 
-  jerry_value_t jbuff = iotjs_bufferwrap_create_buffer(full_len);
-  iotjs_bufferwrap_t *buffer_wrap = iotjs_bufferwrap_from_jbuffer(jbuff);
-
-  uint8_t *buff_ptr = (uint8_t *)buffer_wrap->buffer;
+  jerry_value_t buffer_wrap = iotjs_bufferwrap_create_buffer(full_len);
+  uint8_t *buff_ptr = (uint8_t *)iotjs_bufferwrap_data(buffer_wrap);
 
   *buff_ptr++ = header_byte;
   buff_ptr = iotjs_encode_remaining_length(buff_ptr, remaining_length);
@@ -296,7 +294,7 @@ JS_FUNCTION(mqtt_connect) {
   jerry_release_value(jqos);
   jerry_release_value(jretain);
 
-  return jbuff;
+  return buffer_wrap;
 }
 
 
@@ -347,10 +345,9 @@ JS_FUNCTION(mqtt_publish) {
                     get_remaining_length_size(remaining_length) +
                     variable_header_len + payload_len;
 
-  jerry_value_t jbuff = iotjs_bufferwrap_create_buffer(full_len);
-  iotjs_bufferwrap_t *buffer_wrap = iotjs_bufferwrap_from_jbuffer(jbuff);
+  jerry_value_t buffer_wrap = iotjs_bufferwrap_create_buffer(full_len);
 
-  uint8_t *buff_ptr = (uint8_t *)buffer_wrap->buffer;
+  uint8_t *buff_ptr = (uint8_t *)iotjs_bufferwrap_data(buffer_wrap);
 
   *buff_ptr++ = header_byte;
   buff_ptr = iotjs_encode_remaining_length(buff_ptr, remaining_length);
@@ -369,7 +366,7 @@ JS_FUNCTION(mqtt_publish) {
 
   iotjs_free_tmp_buffer(&message);
   iotjs_free_tmp_buffer(&topic);
-  return jbuff;
+  return buffer_wrap;
 }
 
 
@@ -437,12 +434,11 @@ static int iotjs_mqtt_handle(jerry_value_t jsref, char first_byte, char *buffer,
         payload_length -= sizeof(packet_identifier);
       }
 
-      jerry_value_t jmessage = iotjs_bufferwrap_create_buffer(payload_length);
-      iotjs_bufferwrap_t *msg_wrap = iotjs_bufferwrap_from_jbuffer(jmessage);
+      jerry_value_t msg_wrap = iotjs_bufferwrap_create_buffer(payload_length);
 
-      memcpy(msg_wrap->buffer, buffer, payload_length);
+      memcpy(iotjs_bufferwrap_data(msg_wrap), buffer, payload_length);
 
-      jerry_value_t args[4] = { jmessage, jtopic,
+      jerry_value_t args[4] = { msg_wrap, jtopic,
                                 jerry_create_number(header.bits.qos),
                                 jerry_create_number(packet_identifier) };
 
@@ -547,14 +543,15 @@ static int iotjs_mqtt_handle(jerry_value_t jsref, char first_byte, char *buffer,
 
 
 static void iotjs_mqtt_concat_buffers(iotjs_mqttclient_t *mqttclient,
-                                      iotjs_bufferwrap_t *buff_recv) {
+                                      jerry_value_t buff_recv) {
+  size_t buff_recv_length = iotjs_bufferwrap_length(buff_recv);
   char *tmp_buf = mqttclient->buffer;
   mqttclient->buffer =
-      IOTJS_CALLOC(mqttclient->buffer_length + buff_recv->length, char);
+      IOTJS_CALLOC(mqttclient->buffer_length + buff_recv_length, char);
   memcpy(mqttclient->buffer, tmp_buf, mqttclient->buffer_length);
-  memcpy(mqttclient->buffer + mqttclient->buffer_length, buff_recv->buffer,
-         buff_recv->length);
-  mqttclient->buffer_length += buff_recv->length;
+  memcpy(mqttclient->buffer + mqttclient->buffer_length,
+         iotjs_bufferwrap_data(buff_recv), buff_recv_length);
+  mqttclient->buffer_length += buff_recv_length;
   IOTJS_RELEASE(tmp_buf);
 }
 
@@ -600,14 +597,14 @@ JS_FUNCTION(mqtt_receive) {
     return JS_CREATE_ERROR(COMMON, "MQTT native pointer not available");
   }
 
-  jerry_value_t jbuffer = JS_GET_ARG(1, object);
-  iotjs_bufferwrap_t *buff_recv = iotjs_bufferwrap_from_jbuffer(jbuffer);
-  if (buff_recv->length == 0) {
+  jerry_value_t buff_recv = JS_GET_ARG(1, object);
+  size_t buff_recv_length = iotjs_bufferwrap_length(buff_recv);
+  if (buff_recv_length == 0) {
     return jerry_create_undefined();
   }
 
-  char *current_buffer = buff_recv->buffer;
-  char *current_buffer_end = current_buffer + buff_recv->length;
+  char *current_buffer = iotjs_bufferwrap_data(buff_recv);
+  char *current_buffer_end = current_buffer + buff_recv_length;
 
   // Concat the buffers if we previously needed to
   if (mqttclient->buffer_length > 0) {
@@ -733,10 +730,9 @@ static jerry_value_t iotjs_mqtt_subscribe_handler(
                     get_remaining_length_size(remaining_length) +
                     remaining_length;
 
-  jerry_value_t jbuff = iotjs_bufferwrap_create_buffer(full_len);
-  iotjs_bufferwrap_t *buffer_wrap = iotjs_bufferwrap_from_jbuffer(jbuff);
+  jerry_value_t buffer_wrap = iotjs_bufferwrap_create_buffer(full_len);
 
-  uint8_t *buff_ptr = (uint8_t *)buffer_wrap->buffer;
+  uint8_t *buff_ptr = iotjs_bufferwrap_data(buffer_wrap);
 
   *buff_ptr++ = header_byte;
 
@@ -754,7 +750,7 @@ static jerry_value_t iotjs_mqtt_subscribe_handler(
   }
 
   iotjs_free_tmp_buffer(&topic);
-  return jbuff;
+  return buffer_wrap;
 }
 
 
@@ -777,15 +773,14 @@ JS_FUNCTION(mqtt_ping) {
   uint8_t remaining_length = 0;
   size_t full_len = sizeof(header_byte) + sizeof(remaining_length);
 
-  jerry_value_t jbuff = iotjs_bufferwrap_create_buffer(full_len);
-  iotjs_bufferwrap_t *buffer_wrap = iotjs_bufferwrap_from_jbuffer(jbuff);
+  jerry_value_t buffer_wrap = iotjs_bufferwrap_create_buffer(full_len);
 
-  uint8_t *buff_ptr = (uint8_t *)buffer_wrap->buffer;
+  uint8_t *buff_ptr = (uint8_t *)iotjs_bufferwrap_data(buffer_wrap);
 
   buff_ptr[0] = header_byte;
   buff_ptr[1] = remaining_length;
 
-  return jbuff;
+  return buffer_wrap;
 }
 
 
@@ -798,15 +793,14 @@ JS_FUNCTION(mqtt_disconnect) {
 
   size_t full_len = sizeof(header_byte) + sizeof(remaining_length);
 
-  jerry_value_t jbuff = iotjs_bufferwrap_create_buffer(full_len);
-  iotjs_bufferwrap_t *buffer_wrap = iotjs_bufferwrap_from_jbuffer(jbuff);
+  jerry_value_t buffer_wrap = iotjs_bufferwrap_create_buffer(full_len);
 
-  uint8_t *buff_ptr = (uint8_t *)buffer_wrap->buffer;
+  uint8_t *buff_ptr = (uint8_t *)iotjs_bufferwrap_data(buffer_wrap);
 
   buff_ptr[0] = header_byte;
   buff_ptr[1] = remaining_length;
 
-  return jbuff;
+  return buffer_wrap;
 }
 
 JS_FUNCTION(mqtt_send_ack) {
@@ -827,17 +821,16 @@ JS_FUNCTION(mqtt_send_ack) {
 
   size_t full_len = sizeof(uint8_t) * 2 + sizeof(packet_id);
 
-  jerry_value_t jbuff = iotjs_bufferwrap_create_buffer(full_len);
-  iotjs_bufferwrap_t *buffer_wrap = iotjs_bufferwrap_from_jbuffer(jbuff);
+  jerry_value_t buffer_wrap = iotjs_bufferwrap_create_buffer(full_len);
 
-  uint8_t *buff_ptr = (uint8_t *)buffer_wrap->buffer;
+  uint8_t *buff_ptr = (uint8_t *)iotjs_bufferwrap_data(buffer_wrap);
 
   buff_ptr[0] = header_byte;
   buff_ptr[1] = 2; /* length */
   buff_ptr[2] = packet_identifier_msb;
   buff_ptr[3] = packet_identifier_lsb;
 
-  return jbuff;
+  return buffer_wrap;
 }
 
 jerry_value_t iotjs_init_mqtt(void) {

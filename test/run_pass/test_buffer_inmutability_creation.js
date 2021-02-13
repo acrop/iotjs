@@ -35,7 +35,7 @@ assert.notStrictEqual(typeof(Buffer), "function");
  * Still the creation of buffer should work.
  * Using an already saved buffer reference
  */
-var new_buffer = backup_buffer("OK");
+var new_buffer = new backup_buffer("OK");
 
 assert.equal(new_buffer.length, 2);
 assert.equal(new_buffer.toString(), "OK");

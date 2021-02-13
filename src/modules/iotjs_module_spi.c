@@ -231,10 +231,8 @@ static uint8_t spi_transfer_helper(jerry_value_t jtx_buf, iotjs_spi_t* spi) {
     spi->buf_len = spi_get_array_data(&spi->tx_buf_data, jtx_buf);
     result = kSpiOpTransferArray;
   } else if (jerry_value_is_object(jtx_buf)) {
-    iotjs_bufferwrap_t* tx_buf = iotjs_bufferwrap_from_jbuffer(jtx_buf);
-
-    spi->tx_buf_data = tx_buf->buffer;
-    spi->buf_len = iotjs_bufferwrap_length(tx_buf);
+    spi->tx_buf_data = iotjs_bufferwrap_data(jtx_buf);
+    spi->buf_len = iotjs_bufferwrap_length(jtx_buf);
   }
 
   IOTJS_ASSERT(spi->buf_len > 0);

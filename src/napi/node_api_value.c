@@ -34,20 +34,6 @@ const char* const napi_err_no_typedarray =
 const char* const napi_err_invalid_deferred =
     "Invalid deferred object. Please refer to the documentation.";
 
-static void iotjs_napi_buffer_external_free_cb(void* native_p) {
-  iotjs_buffer_external_info_t* info = (iotjs_buffer_external_info_t*)native_p;
-
-  napi_env env = info->env;
-  void* external_data = info->external_data;
-  void* finalize_hint = info->finalize_hint;
-  napi_finalize finalize_cb = info->finalize_cb;
-  if (finalize_cb != NULL) {
-    finalize_cb(env, external_data, finalize_hint);
-  }
-
-  IOTJS_RELEASE(info);
-}
-
 napi_status napi_assign_bool(bool value, bool* result) {
   NAPI_ASSIGN(result, value);
   NAPI_RETURN(napi_ok);
@@ -167,25 +153,23 @@ napi_status napi_create_typedarray(napi_env env, napi_typedarray_type type,
 napi_status napi_create_buffer(napi_env env, size_t size, void** data,
                                napi_value* result) {
   NAPI_TRY_ENV(env);
-  JERRYX_CREATE(jval_buf, iotjs_bufferwrap_create_buffer(size));
-  iotjs_bufferwrap_t* buf_wrap = iotjs_bufferwrap_from_jbuffer(jval_buf);
+  JERRYX_CREATE(buf_wrap, iotjs_bufferwrap_create_buffer(size));
 
-  NAPI_ASSIGN(data, buf_wrap->buffer);
+  NAPI_ASSIGN(data, iotjs_bufferwrap_data(buf_wrap));
 
-  return napi_assign_nvalue(jval_buf, result);
+  return napi_assign_nvalue(buf_wrap, result);
 }
 
 napi_status napi_create_buffer_copy(napi_env env, size_t size, const void* data,
                                     void** result_data, napi_value* result) {
   NAPI_TRY_ENV(env);
-  JERRYX_CREATE(jval_buf, iotjs_bufferwrap_create_buffer(size));
-  iotjs_bufferwrap_t* buf_wrap = iotjs_bufferwrap_from_jbuffer(jval_buf);
+  JERRYX_CREATE(buf_wrap, iotjs_bufferwrap_create_buffer(size));
 
   iotjs_bufferwrap_copy(buf_wrap, (char*)data, size);
 
-  NAPI_ASSIGN(result_data, buf_wrap->buffer);
+  NAPI_ASSIGN(result_data, iotjs_bufferwrap_data(buf_wrap));
 
-  return napi_assign_nvalue(jval_buf, result);
+  return napi_assign_nvalue(buf_wrap, result);
 }
 
 napi_status napi_create_dataview(napi_env env, size_t byte_length,
@@ -253,19 +237,18 @@ napi_status napi_create_external_buffer(napi_env env, size_t length, void* data,
   NAPI_INTERNAL_CALL(
       napi_create_buffer_copy(env, length, data, (void**)&nval, &res));
 
-  jerry_value_t jbuffer = AS_JERRY_VALUE(res);
-  iotjs_bufferwrap_t* bufferwrap = iotjs_bufferwrap_from_jbuffer(jbuffer);
-  iotjs_buffer_external_info_t* info =
-      IOTJS_ALLOC(iotjs_buffer_external_info_t);
+  jerry_value_t bufferwrap = AS_JERRY_VALUE(res);
+  iotjs_object_info_t* object_info =
+      iotjs_get_object_native_info(bufferwrap, sizeof(iotjs_object_info_t));
 
-  info->env = env;
-  info->external_data = data;
-  info->finalize_hint = finalize_hint;
-  info->finalize_cb = finalize_cb;
+  NAPI_WEAK_ASSERT(napi_invalid_arg, (object_info->native_object == NULL));
+  NAPI_WEAK_ASSERT(napi_invalid_arg, (object_info->finalize_cb == NULL));
+  NAPI_WEAK_ASSERT(napi_invalid_arg, (object_info->finalize_hint == NULL));
 
-  iotjs_bufferwrap_set_external_callback(bufferwrap,
-                                         iotjs_napi_buffer_external_free_cb,
-                                         info);
+  object_info->env = env;
+  object_info->native_object = data;
+  object_info->finalize_cb = finalize_cb;
+  object_info->finalize_hint = finalize_hint;
 
   NAPI_ASSIGN(result, res);
   NAPI_RETURN(napi_ok);
@@ -439,9 +422,9 @@ napi_status napi_get_arraybuffer_info(napi_env env, napi_value arraybuffer,
 napi_status napi_get_buffer_info(napi_env env, napi_value value, void** data,
                                  size_t* length) {
   NAPI_TRY_ENV(env);
-  jerry_value_t jval = AS_JERRY_VALUE(value);
-  iotjs_bufferwrap_t* buf_wrap = iotjs_bufferwrap_from_jbuffer(jval);
-  NAPI_ASSIGN(data, buf_wrap->buffer);
+  jerry_value_t buf_wrap = AS_JERRY_VALUE(value);
+
+  NAPI_ASSIGN(data, iotjs_bufferwrap_data(buf_wrap));
   NAPI_ASSIGN(length, iotjs_bufferwrap_length(buf_wrap));
 
   NAPI_RETURN(napi_ok);

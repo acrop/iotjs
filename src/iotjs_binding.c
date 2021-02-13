@@ -106,16 +106,14 @@ bool iotjs_jbuffer_as_string(jerry_value_t jval, iotjs_string_t* out_string) {
     return true;
   }
 
-  iotjs_bufferwrap_t* buffer_wrap = iotjs_jbuffer_get_bufferwrap_ptr(jval);
+  size_t size = iotjs_bufferwrap_length(jval);
 
-  if (buffer_wrap == NULL || buffer_wrap->length == 0) {
+  if (!jerry_value_is_typedarray(jval) || size == 0) {
     return false;
   }
-
-  size_t size = buffer_wrap->length;
-
   char* buffer = iotjs_buffer_allocate(size + 1);
-  memcpy(buffer, buffer_wrap->buffer, size);
+  char* src_buffer = iotjs_bufferwrap_data(jval);
+  memcpy(buffer, src_buffer, size);
   buffer[size] = '\0';
   *out_string = iotjs_string_create_with_buffer(buffer, size);
   return true;
@@ -132,15 +130,11 @@ void iotjs_jval_as_tmp_buffer(jerry_value_t jval,
     return;
   }
 
-  iotjs_bufferwrap_t* buffer_wrap = iotjs_jbuffer_get_bufferwrap_ptr(jval);
-
-  if (buffer_wrap != NULL) {
-    IOTJS_ASSERT(buffer_wrap->jobject == jval);
-
-    jerry_acquire_value(jval);
-    out_buffer->jval = buffer_wrap->jobject;
-    out_buffer->buffer = buffer_wrap->buffer;
-    out_buffer->length = buffer_wrap->length;
+  if (jerry_value_is_typedarray(jval)) {
+    jerry_value_t buffer_wrap = jerry_acquire_value(jval);
+    out_buffer->jval = buffer_wrap;
+    out_buffer->buffer = iotjs_bufferwrap_data(buffer_wrap);
+    out_buffer->length = iotjs_bufferwrap_length(buffer_wrap);
     return;
   }
 

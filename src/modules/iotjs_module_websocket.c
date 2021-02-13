@@ -119,7 +119,7 @@ static unsigned char *iotjs_make_handshake_key(char *client_key,
   size_t client_key_size = strnlen((char *)client_key, 24);
   size_t concatenated_size = ws_guid_size + client_key_size;
 
-  unsigned char concatenated[concatenated_size + 1];
+  JERRY_VLA(unsigned char, concatenated, concatenated_size + 1);
   memcpy(concatenated, client_key, client_key_size);
   memcpy(concatenated + client_key_size, WS_GUID, ws_guid_size);
   concatenated[concatenated_size] = '\0';
@@ -193,16 +193,15 @@ static jerry_value_t iotjs_websocket_encode_frame(uint8_t opcode, bool mask,
 
   buffer_size += extended_len_size;
 
-  jerry_value_t jframe = iotjs_bufferwrap_create_buffer(buffer_size);
-  iotjs_bufferwrap_t *frame_wrap = iotjs_bufferwrap_from_jbuffer(jframe);
-  char *buff_ptr = frame_wrap->buffer;
+  jerry_value_t frame_wrap = iotjs_bufferwrap_create_buffer(buffer_size);
+  char *buff_ptr = iotjs_bufferwrap_data(frame_wrap);
 
   *buff_ptr++ = (char)header[0];
   *buff_ptr++ = (char)header[1];
 
   if (extended_len_size) {
     if (extended_len_size == 2) {
-      uint16_t len = payload_len;
+      size_t len = payload_len;
       *buff_ptr++ = *((char *)&len + 1);
       *buff_ptr++ = *((char *)&len);
     } else {
@@ -230,7 +229,7 @@ static jerry_value_t iotjs_websocket_encode_frame(uint8_t opcode, bool mask,
     buff_ptr = iotjs_ws_write_data(buff_ptr, payload, payload_len);
   }
 
-  return jframe;
+  return frame_wrap;
 }
 
 
@@ -240,12 +239,12 @@ static void iotjs_websocket_create_buffer_and_cb(char **buff_ptr,
                                                  jerry_value_t jsref,
                                                  jerry_value_t client) {
   if (payload_len > 0) {
-    jerry_value_t ret_buff = iotjs_bufferwrap_create_buffer(payload_len);
-    iotjs_bufferwrap_t *buff_wrap = iotjs_bufferwrap_from_jbuffer(ret_buff);
-    iotjs_ws_write_data(buff_wrap->buffer, *buff_ptr, payload_len);
+    jerry_value_t buff_wrap = iotjs_bufferwrap_create_buffer(payload_len);
+    iotjs_ws_write_data(iotjs_bufferwrap_data(buff_wrap), *buff_ptr,
+                        payload_len);
     *buff_ptr += payload_len;
-    iotjs_websocket_create_callback(jsref, ret_buff, cb_type, client);
-    jerry_release_value(ret_buff);
+    iotjs_websocket_create_callback(jsref, buff_wrap, cb_type, client);
+    jerry_release_value(buff_wrap);
 
     return;
   }
@@ -304,13 +303,11 @@ JS_FUNCTION(prepare_handshake_request) {
   size_t generated_key_len = 0;
   wsclient->generated_key = ws_generate_key(jsref, &generated_key_len);
 
-  jerry_value_t jfinal = iotjs_bufferwrap_create_buffer(
+  jerry_value_t final_wrap = iotjs_bufferwrap_create_buffer(
       header_fixed_size + iotjs_string_size(&l_endpoint) +
       iotjs_string_size(&l_host) + (sizeof(line_end) * 2) + generated_key_len);
 
-  iotjs_bufferwrap_t *final_wrap = iotjs_bufferwrap_from_jbuffer(jfinal);
-
-  char *buff_ptr = final_wrap->buffer;
+  char *buff_ptr = iotjs_bufferwrap_data(final_wrap);
   buff_ptr = iotjs_ws_write_header(buff_ptr, method);
   memcpy(buff_ptr, iotjs_string_data(&l_endpoint),
          iotjs_string_size(&l_endpoint));
@@ -331,7 +328,7 @@ JS_FUNCTION(prepare_handshake_request) {
   iotjs_string_destroy(&l_endpoint);
   iotjs_string_destroy(&l_host);
 
-  return jfinal;
+  return final_wrap;
 }
 
 
@@ -354,11 +351,10 @@ JS_FUNCTION(receive_handshake_data) {
     return JS_CREATE_ERROR(COMMON, "mbedtls base64 encode failed");
   }
 
-  jerry_value_t jfinal = iotjs_bufferwrap_create_buffer(
+  jerry_value_t final_wrap = iotjs_bufferwrap_create_buffer(
       sizeof(handshake_response) - 1 + key_len + sizeof(line_end) * 2);
 
-  iotjs_bufferwrap_t *final_wrap = iotjs_bufferwrap_from_jbuffer(jfinal);
-  char *buff_ptr = final_wrap->buffer;
+  char *buff_ptr = iotjs_bufferwrap_data(final_wrap);
   buff_ptr = iotjs_ws_write_header(buff_ptr, handshake_response);
   memcpy(buff_ptr, key, key_len);
   buff_ptr += key_len;
@@ -367,23 +363,24 @@ JS_FUNCTION(receive_handshake_data) {
 
   iotjs_string_destroy(&client_key);
   IOTJS_RELEASE(key);
-  return jfinal;
+  return final_wrap;
 }
 
 JS_FUNCTION(parse_handshake_data) {
   DJS_CHECK_THIS();
   DJS_CHECK_ARGS(2, object, object);
 
-  jerry_value_t jbuffer = JS_GET_ARG(0, object);
-  iotjs_bufferwrap_t *buff_wrap = iotjs_bufferwrap_from_jbuffer(jbuffer);
-  if (buff_wrap->length < 12 || strncmp(buff_wrap->buffer + 9, "101", 3)) {
+  jerry_value_t buff_wrap = JS_GET_ARG(0, object);
+  size_t buff_wrap_length = iotjs_bufferwrap_length(buff_wrap);
+  const char *buff_wrap_buffer = iotjs_bufferwrap_data(buff_wrap);
+  if (buff_wrap_length < 12 || strncmp(buff_wrap_buffer + 9, "101", 3)) {
     return JS_CREATE_ERROR(COMMON, "WebSocket connection failed");
   }
   jerry_value_t jsref = JS_GET_ARG(1, object);
 
   char ws_accept[] = "Sec-WebSocket-Accept: ";
-  char *frame_end = strstr(buff_wrap->buffer, "\r\n\r\n");
-  char *key_pos = strstr(buff_wrap->buffer, ws_accept) + strlen(ws_accept);
+  char *frame_end = strstr(buff_wrap_buffer, "\r\n\r\n");
+  char *key_pos = strstr(buff_wrap_buffer, ws_accept) + strlen(ws_accept);
   char key[28] = { 0 };
   memcpy(key, key_pos, 28);
 
@@ -393,17 +390,15 @@ JS_FUNCTION(parse_handshake_data) {
     return JS_CREATE_ERROR(COMMON, "WebSocket handshake key comparison failed");
   }
 
-  size_t header_size = (size_t)(frame_end - buff_wrap->buffer);
-  if (buff_wrap->length > header_size) {
-    size_t remaining_length = buff_wrap->length - header_size;
-    jerry_value_t jdata = iotjs_bufferwrap_create_buffer(remaining_length);
-    iotjs_bufferwrap_t *data_wrap = iotjs_bufferwrap_from_jbuffer(jdata);
+  size_t header_size = (size_t)(frame_end - buff_wrap_buffer);
+  if (buff_wrap_length > header_size) {
+    size_t remaining_length = buff_wrap_length - header_size;
+    jerry_value_t data_wrap = iotjs_bufferwrap_create_buffer(remaining_length);
+    char *data_wrap_buffer = iotjs_bufferwrap_data(data_wrap);
 
-    memcpy(data_wrap->buffer, buff_wrap->buffer + header_size,
-           remaining_length);
-    data_wrap->length = remaining_length;
+    memcpy(data_wrap_buffer, buff_wrap_buffer + header_size, remaining_length);
 
-    return jdata;
+    return data_wrap;
   }
 
   return jerry_create_undefined();
@@ -411,14 +406,15 @@ JS_FUNCTION(parse_handshake_data) {
 
 
 static void iotjs_websocket_concat_tcp_buffers(iotjs_wsclient_t *wsclient,
-                                               iotjs_bufferwrap_t *buff_recv) {
+                                               jerry_value_t buff_recv) {
   char *tmp_buf = wsclient->tcp_buff.buffer;
+  size_t buff_recv_length = iotjs_bufferwrap_length(buff_recv);
   wsclient->tcp_buff.buffer =
-      IOTJS_CALLOC(wsclient->tcp_buff.length + buff_recv->length, char);
+      IOTJS_CALLOC(wsclient->tcp_buff.length + buff_recv_length, char);
   memcpy(wsclient->tcp_buff.buffer, tmp_buf, wsclient->tcp_buff.length);
   memcpy(wsclient->tcp_buff.buffer + wsclient->tcp_buff.length,
-         buff_recv->buffer, buff_recv->length);
-  wsclient->tcp_buff.length += buff_recv->length;
+         iotjs_bufferwrap_data(buff_recv), buff_recv_length);
+  wsclient->tcp_buff.length += buff_recv_length;
   IOTJS_RELEASE(tmp_buf);
 }
 
@@ -502,20 +498,19 @@ static uint8_t iotjs_websocket_decode_frame(iotjs_wsclient_t *wsclient,
         buff_ptr += 2;
         payload_len -= 2;
         size_t ret_code_str_size = 4;
-        char ret_code_str[ret_code_str_size + 1];
+        JERRY_VLA(char, ret_code_str, ret_code_str_size + 1);
         snprintf(ret_code_str, ret_code_str_size + 1, "%d", ret_code);
 
-        jerry_value_t ret_buff =
+        jerry_value_t ret_wrap =
             iotjs_bufferwrap_create_buffer(payload_len + ret_code_str_size);
-        iotjs_bufferwrap_t *ret_wrap = iotjs_bufferwrap_from_jbuffer(ret_buff);
-        char *local_ptr = ret_wrap->buffer;
+        char *local_ptr = iotjs_bufferwrap_data(ret_wrap);
         local_ptr =
             iotjs_ws_write_data(local_ptr, ret_code_str, ret_code_str_size);
         local_ptr = iotjs_ws_write_data(local_ptr, buff_ptr, payload_len);
         buff_ptr += payload_len;
-        iotjs_websocket_create_callback(jsref, ret_buff,
+        iotjs_websocket_create_callback(jsref, ret_wrap,
                                         IOTJS_MAGIC_STRING_ONCLOSE, client);
-        jerry_release_value(ret_buff);
+        jerry_release_value(ret_wrap);
         break;
       }
       iotjs_websocket_create_callback(jsref, jerry_create_undefined(),
@@ -558,17 +553,18 @@ JS_FUNCTION(ws_receive) {
     return iotjs_websocket_check_error(WS_ERR_NATIVE_POINTER_ERR);
   }
 
-  jerry_value_t jbuffer = JS_GET_ARG(1, object);
-  iotjs_bufferwrap_t *buffer_wrap = iotjs_bufferwrap_from_jbuffer(jbuffer);
+  jerry_value_t buffer_wrap = JS_GET_ARG(1, object);
 
   jerry_value_t client = JS_GET_ARG(2, object);
 
-  if (buffer_wrap->length == 0) {
+  size_t buffer_wrap_length = iotjs_bufferwrap_length(buffer_wrap);
+
+  if (buffer_wrap_length == 0) {
     return jerry_create_undefined();
   }
 
-  char *current_buffer = buffer_wrap->buffer;
-  char *current_buffer_end = current_buffer + buffer_wrap->length;
+  char *current_buffer = iotjs_bufferwrap_data(buffer_wrap);
+  char *current_buffer_end = current_buffer + buffer_wrap_length;
 
   if (wsclient->tcp_buff.length > 0) {
     iotjs_websocket_concat_tcp_buffers(wsclient, buffer_wrap);

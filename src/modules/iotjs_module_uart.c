@@ -13,7 +13,11 @@
  * limitations under the License.
  */
 
+#ifndef _WIN32
 #include <unistd.h>
+#else
+#include <io.h>
+#endif
 
 #include "iotjs_def.h"
 #include "iotjs_module_buffer.h"
@@ -73,11 +77,10 @@ static void iotjs_uart_read_cb(uv_poll_t* req, int status, int events) {
     jerry_value_t str =
         jerry_create_string((const jerry_char_t*)IOTJS_MAGIC_STRING_DATA);
 
-    jerry_value_t jbuf = iotjs_bufferwrap_create_buffer((size_t)i);
-    iotjs_bufferwrap_t* buf_wrap = iotjs_bufferwrap_from_jbuffer(jbuf);
+    jerry_value_t buf_wrap = iotjs_bufferwrap_create_buffer((size_t)i);
     iotjs_bufferwrap_copy(buf_wrap, buf, (size_t)i);
 
-    jerry_value_t jargs[] = { str, jbuf };
+    jerry_value_t jargs[] = { str, buf_wrap };
     jerry_value_t jres =
         jerry_call_function(jemit, IOTJS_UV_HANDLE_DATA(req)->jobject, jargs,
                             2);
@@ -85,7 +88,7 @@ static void iotjs_uart_read_cb(uv_poll_t* req, int status, int events) {
 
     jerry_release_value(jres);
     jerry_release_value(str);
-    jerry_release_value(jbuf);
+    jerry_release_value(buf_wrap);
     jerry_release_value(jemit);
   }
 }
