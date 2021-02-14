@@ -1,4 +1,3 @@
-var assert = require('assert');
 var fs = require('fs');
 var pathExists = require('fs').existsSync;
 
@@ -37,5 +36,5 @@ exports.fileExists = function(name) {
 };
 
 exports.isError = function(obj) {
-    return Object.prototype.toString.call(obj) === '[object Error]';
+    return obj instanceof Error;
 };

@@ -80,6 +80,11 @@ function equal(actual, expected, message) {
   }
 }
 
+function deepEqual(actual, expected, message) {
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+    fail(actual, expected, message, '==');
+  }
+}
 
 function notEqual(actual, expected, message) {
   if (actual == expected) {
@@ -109,6 +114,13 @@ function throws(block, expected, message) {
     block();
   } catch (e) {
     actual = e;
+  }
+
+  if (typeof expected === 'function') {
+    if (expected(actual)) {
+      return;
+    }
+    throw actual;
   }
 
   message = (expected && expected.name ? '(' + expected.name + ').' : '.') +
@@ -142,8 +154,10 @@ function doesNotThrow(block, message) {
 
 assert.AssertionError = AssertionError;
 assert.assert = assert;
+assert.ok = assert;
 assert.fail = fail;
 assert.equal = equal;
+assert.deepEqual = deepEqual;
 assert.notEqual = notEqual;
 assert.strictEqual = strictEqual;
 assert.notStrictEqual = notStrictEqual;

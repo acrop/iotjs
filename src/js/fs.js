@@ -220,7 +220,7 @@ fs.readFile = function(path, callback) {
 };
 
 
-fs.readFileSync = function(path) {
+fs.readFileSync = function(path, encoding) {
   checkArgString(path);
 
   var fd = fs.openSync(path, 'r', 438);
@@ -241,7 +241,11 @@ fs.readFileSync = function(path) {
   }
   fs.closeSync(fd);
 
-  return Buffer.concat(buffers);
+  var buf = Buffer.concat(buffers);
+  if (typeof encoding === 'string') {
+    return buf.toString(encoding);
+  }
+  return buf;
 };
 
 
