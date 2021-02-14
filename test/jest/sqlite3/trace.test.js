@@ -1,5 +1,6 @@
 var sqlite3 = require('sqlite3');
 var assert = require('assert');
+require('jest');
 
 describe('tracing', function() {
     it('Database tracing', function(done) {

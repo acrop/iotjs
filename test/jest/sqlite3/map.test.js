@@ -1,5 +1,6 @@
 var sqlite3 = require('sqlite3');
 var assert = require('assert');
+require('jest');
 
 describe('map', function() {
     it('test Database#map() with two columns', function(done) {

@@ -15,6 +15,286 @@
       "required-features": [
         "Symbol"
       ]
+    },
+    {
+      "name": "sqlite3/backup.test.js",
+      "required-modules": [
+        "jest",
+        "sqlite3"
+      ],
+      "required-features": [
+        "Symbol"
+      ]
+    },
+    {
+      "name": "sqlite3/blob.test.js",
+      "required-modules": [
+        "jest",
+        "sqlite3"
+      ],
+      "required-features": [
+        "Symbol"
+      ]
+    },
+    {
+      "name": "sqlite3/cache.test.js",
+      "required-modules": [
+        "jest",
+        "sqlite3"
+      ],
+      "required-features": [
+        "Symbol"
+      ]
+    },
+    {
+      "name": "sqlite3/constants.test.js",
+      "required-modules": [
+        "jest",
+        "sqlite3"
+      ],
+      "required-features": [
+        "Symbol"
+      ]
+    },
+    {
+      "name": "sqlite3/database_fail.test.js",
+      "required-modules": [
+        "jest",
+        "sqlite3"
+      ],
+      "required-features": [
+        "Symbol"
+      ]
+    },
+    {
+      "name": "sqlite3/each.test.js",
+      "required-modules": [
+        "jest",
+        "sqlite3"
+      ],
+      "required-features": [
+        "Symbol"
+      ]
+    },
+    {
+      "name": "sqlite3/exec.test.js",
+      "required-modules": [
+        "jest",
+        "sqlite3"
+      ],
+      "required-features": [
+        "Symbol"
+      ]
+    },
+    {
+      "name": "sqlite3/extension.test.js",
+      "required-modules": [
+        "jest",
+        "sqlite3"
+      ],
+      "required-features": [
+        "Symbol"
+      ]
+    },
+    {
+      "name": "sqlite3/fts-content.test.js",
+      "required-modules": [
+        "jest",
+        "sqlite3"
+      ],
+      "required-features": [
+        "Symbol"
+      ]
+    },
+    {
+      "name": "sqlite3/interrupt.test.js",
+      "required-modules": [
+        "jest",
+        "sqlite3"
+      ],
+      "required-features": [
+        "Symbol"
+      ]
+    },
+    {
+      "name": "sqlite3/issue-108.test.js",
+      "required-modules": [
+        "jest",
+        "sqlite3"
+      ],
+      "required-features": [
+        "Symbol"
+      ]
+    },
+    {
+      "name": "sqlite3/json.test.js",
+      "required-modules": [
+        "jest",
+        "sqlite3"
+      ],
+      "required-features": [
+        "Symbol"
+      ]
+    },
+    {
+      "name": "sqlite3/map.test.js",
+      "required-modules": [
+        "jest",
+        "sqlite3"
+      ],
+      "required-features": [
+        "Symbol"
+      ]
+    },
+    {
+      "name": "sqlite3/named_columns.test.js",
+      "required-modules": [
+        "jest",
+        "sqlite3"
+      ],
+      "required-features": [
+        "Symbol"
+      ]
+    },
+    {
+      "name": "sqlite3/named_params.test.js",
+      "required-modules": [
+        "jest",
+        "sqlite3"
+      ],
+      "required-features": [
+        "Symbol"
+      ]
+    },
+    {
+      "name": "sqlite3/null_error.test.js",
+      "required-modules": [
+        "jest",
+        "sqlite3"
+      ],
+      "required-features": [
+        "Symbol"
+      ]
+    },
+    {
+      "name": "sqlite3/open_close.test.js",
+      "required-modules": [
+        "jest",
+        "sqlite3"
+      ],
+      "required-features": [
+        "Symbol"
+      ]
+    },
+    {
+      "name": "sqlite3/other_objects.test.js",
+      "required-modules": [
+        "jest",
+        "sqlite3"
+      ],
+      "required-features": [
+        "Symbol"
+      ]
+    },
+    {
+      "name": "sqlite3/parallel_insert.test.js",
+      "required-modules": [
+        "jest",
+        "sqlite3"
+      ],
+      "required-features": [
+        "Symbol"
+      ]
+    },
+    {
+      "name": "sqlite3/prepare.test.js",
+      "required-modules": [
+        "jest",
+        "sqlite3"
+      ],
+      "required-features": [
+        "Symbol"
+      ]
+    },
+    {
+      "name": "sqlite3/profile.test.js",
+      "required-modules": [
+        "jest",
+        "sqlite3"
+      ],
+      "required-features": [
+        "Symbol"
+      ]
+    },
+    {
+      "name": "sqlite3/rerun.test.js",
+      "required-modules": [
+        "jest",
+        "sqlite3"
+      ],
+      "required-features": [
+        "Symbol"
+      ]
+    },
+    {
+      "name": "sqlite3/scheduling.test.js",
+      "required-modules": [
+        "jest",
+        "sqlite3"
+      ],
+      "required-features": [
+        "Symbol"
+      ]
+    },
+    {
+      "name": "sqlite3/serialization.test.js",
+      "required-modules": [
+        "jest",
+        "sqlite3"
+      ],
+      "required-features": [
+        "Symbol"
+      ]
+    },
+    {
+      "name": "sqlite3/trace.test.js",
+      "required-modules": [
+        "jest",
+        "sqlite3"
+      ],
+      "required-features": [
+        "Symbol"
+      ]
+    },
+    {
+      "name": "sqlite3/unicode.test.js",
+      "required-modules": [
+        "jest",
+        "sqlite3"
+      ],
+      "required-features": [
+        "Symbol"
+      ]
+    },
+    {
+      "name": "sqlite3/upsert.test.js",
+      "required-modules": [
+        "jest",
+        "sqlite3"
+      ],
+      "required-features": [
+        "Symbol"
+      ]
+    },
+    {
+      "name": "sqlite3/verbose.test.js",
+      "required-modules": [
+        "jest",
+        "sqlite3"
+      ],
+      "required-features": [
+        "Symbol"
+      ]
     }
   ],
   "run_pass": [

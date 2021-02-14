@@ -1,5 +1,6 @@
 var sqlite3 = require('sqlite3');
 var assert = require('assert');
+require('jest');
 
 describe('prepare', function() {
     describe('invalid SQL', function() {

@@ -1,6 +1,7 @@
 var sqlite3 = require('sqlite3');
 var assert = require('assert');
 var fs = require('fs');
+require('jest');
 
 describe('exec', function() {
     var db;

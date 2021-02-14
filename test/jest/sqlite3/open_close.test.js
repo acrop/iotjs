@@ -2,6 +2,7 @@ var sqlite3 = require('sqlite3');
 var assert = require('assert');
 var fs = require('fs');
 var helper = require('./support/helper');
+require('jest');
 
 describe('open/close', function() {
     beforeAll(function() {
@@ -30,7 +31,7 @@ describe('open/close', function() {
             helper.deleteFile('test/tmp/test_create.db');
         });
     });
-    
+
     describe('open and close non-existant shared database', function() {
         beforeAll(function() {
             helper.deleteFile('test/tmp/test_create_shared.db');

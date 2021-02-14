@@ -1,4 +1,5 @@
 var sqlite3 = require('sqlite3');
+require('jest');
 
 if( process.env.NODE_SQLITE3_JSON1 === 'no' ){
     describe('json', function() {

@@ -352,6 +352,7 @@ if(NOT USING_MSVC)
   iotjs_add_compile_flags(-Wextra -Werror -Wno-unused-parameter)
   iotjs_add_compile_flags(-Wno-sizeof-pointer-memaccess -Wno-unused-variable)
 endif()
+iotjs_add_compile_flags(-D_HAVE_SQLITE_CONFIG_H)
 
 if(ENABLE_SNAPSHOT)
   set(JS2C_SNAPSHOT_ARG --snapshot-tool=${JERRY_HOST_SNAPSHOT})

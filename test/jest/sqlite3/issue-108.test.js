@@ -1,4 +1,5 @@
 var sqlite3 = require('sqlite3');
+require('jest');
 
 describe('buffer', function() {
     var db;

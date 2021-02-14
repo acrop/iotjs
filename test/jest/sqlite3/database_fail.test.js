@@ -1,5 +1,6 @@
 var sqlite3 = require('sqlite3');
 var assert = require('assert');
+require('jest');
 
 describe('error handling', function() {
     var db;
@@ -8,13 +9,16 @@ describe('error handling', function() {
     });
 
     it('throw when calling Database() without new', function() {
+        function verifyConstructor(thrown) {
+            return thrown.message.indexOf("Class constructors cannot be invoked without 'new'") >= 0
+        }
         assert.throws(function() {
             sqlite3.Database(':memory:');
-        }, (/Class constructors cannot be invoked without 'new'/));
+        }, verifyConstructor);
 
         assert.throws(function() {
             sqlite3.Statement();
-        }, (/Class constructors cannot be invoked without 'new'/));
+        }, verifyConstructor);
     });
 
     it('should error when calling Database#get on a missing table', function(done) {

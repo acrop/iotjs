@@ -1,7 +1,6 @@
 var sqlite3 = require('sqlite3');
-var assert = require('assert');
 var exists = require('fs').existsSync;
-
+require('jest');
 
 // disabled because this is not a generically safe test to run on all systems
 

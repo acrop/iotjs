@@ -1,5 +1,6 @@
 var sqlite3 = require('sqlite3');
 var assert = require('assert');
+require('jest');
 
 describe('scheduling', function() {
     it('scheduling after the database was closed', function(done) {

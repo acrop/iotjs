@@ -1,6 +1,6 @@
 var sqlite3 = require('sqlite3');
-var assert = require('assert');
 var helper = require('./support/helper');
+require('jest');
 
 describe('parallel', function() {
     var db;

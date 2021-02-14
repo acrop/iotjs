@@ -4,7 +4,7 @@ function createdb(callback) {
     var existsSync = require('fs').existsSync;
     var path = require('path');
 
-    var sqlite3 = require('../../lib/sqlite3');
+    var sqlite3 = require('sqlite3');
 
     var count = 1000000;
     var db_path = path.join(__dirname, 'big.db');
